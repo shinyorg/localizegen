@@ -9,12 +9,15 @@ namespace Shiny.Extensions.Localization.Generator;
 [Generator]
 public class LocalizationSourceGenerator : IIncrementalGenerator
 {
-    public void Initialize(IncrementalGeneratorInitializationContext context)
-    {
+	public void Initialize(IncrementalGeneratorInitializationContext context)
+	{
 		var globalOptions = context.AnalyzerConfigOptionsProvider.Select(GlobalOptions.Select);
-        var files = context
-            .AdditionalTextsProvider
-            .Where(static x => x.Path.EndsWith(".resx"))
+		var files = context
+			.AdditionalTextsProvider
+			.Where(static x =>
+			{
+				return x.Path.EndsWith(".resx");
+			})
 			.Select((text, token) => (
 				Path.GetFileNameWithoutExtension(text.Path),
 				text.GetText(token)!.ToString())
@@ -39,7 +42,12 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 			// TODO: add folder to root namespace
 			var associatedResourceClassName = file.Item1; // TODO: don't get the resource locale
 			var className = associatedResourceClassName + "Localized";
-			var generated = GenerateStronglyTypedClass(file.Item2, nameSpace, className, associatedResourceClassName);
+			var generated = GenerateStronglyTypedClass(
+				file.Item2,
+				nameSpace,
+				className,
+				associatedResourceClassName
+			);
 
 			var fullClassName = $"{nameSpace}.{className}";
 
@@ -54,7 +62,7 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 
 
     static string GenerateStronglyTypedClass(
-		string resxFilePath,
+		string resxContent,
 		string nameSpace,
 		string className,
 		string associatedResourceClassName // name of the actual resource (BIG ASSUMPTION)
@@ -73,13 +81,14 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 			.AppendLine("\t}")
 			.AppendLine();
 
-		using (var fs = File.OpenRead(resxFilePath))
+		using (var stream = new StringReader(resxContent))
 		{
-			var reader = new ResXResourceReader(fs).GetEnumerator();
+			var reader = new ResXResourceReader(stream).GetEnumerator();
 			while (reader.MoveNext())
 			{
-				var key = SafePropertyKey((string)reader.Key);
-                sb.AppendLine($"\tpublic string {SafePropertyKey} => this.localizer[\"{reader.Key}\"];");
+				var resourceKey = (string)reader.Key;
+				var propertyName = SafePropertyKey(resourceKey);
+                sb.AppendLine($"\tpublic string {propertyName} => this.localizer[\"{resourceKey}\"];");
             }
 		}
 

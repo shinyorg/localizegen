@@ -25,18 +25,19 @@ public class LocalizationSourceGeneratorTests
         var compilation = CSharpCompilation.Create(
             assemblyName: "Tests"
         );
-        var generator = new LocalizationSourceGenerator();
+        var generator = new LocalizationSourceGenerator().AsSourceGenerator();
         var options = new TestAnalyzerConfigOptionsProvider();
-        GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
-
-        driver.WithUpdatedAnalyzerConfigOptions(options);
-
         // TODOs
         options.Options.Add("msbuild.rootnamespace", "MyTestNamespace");
 
-        var resource1 = new ResxAdditionalText("String.resx");
+        var resource1 = new ResxAdditionalText("Strings.resx");
         resource1.AddString("LocalizeKey", "This is a test");
-        driver.AddAdditionalTexts(ImmutableArray.Create<AdditionalText>(resource1));
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            new[] { generator },
+            optionsProvider: options,
+            additionalTexts: ImmutableArray.Create<AdditionalText>(resource1)
+        );
 
         driver = driver.RunGenerators(compilation);
         var results = driver.GetRunResult();
