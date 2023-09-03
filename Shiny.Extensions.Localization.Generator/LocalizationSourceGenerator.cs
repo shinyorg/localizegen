@@ -12,7 +12,6 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
 		var globalOptions = context.AnalyzerConfigOptionsProvider.Select(GlobalOptions.Select);
-
         var files = context
             .AdditionalTextsProvider
             .Where(static x => x.Path.EndsWith(".resx"))
@@ -64,7 +63,7 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 		var sb = new StringBuilder()
 			.AppendLine($"namespace {nameSpace};")
 			.AppendLine()
-			.AppendLine($"public class {className}")
+			.AppendLine($"public partial class {className}")
 			.AppendLine("{")
 			.AppendLine("\treadonly Microsoft.Extensions.Localization.IStringLocalizer localizer;")
 			.AppendLine()

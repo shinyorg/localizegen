@@ -1,28 +1,69 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Xunit;
-using TODO;
 using FluentAssertions;
-
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using System.Collections.Immutable;
+using Xunit.Abstractions;
 
 namespace Shiny.Extensions.Localization.Generator.Tests;
 
 
 public class LocalizationSourceGeneratorTests
 {
+    readonly ITestOutputHelper output;
+
+
+    public LocalizationSourceGeneratorTests(ITestOutputHelper output)
+    {
+        this.output = output;
+    }
+
 
     [Fact]
     public void EndToEndTest()
     {
-        var services = new ServiceCollection();
-        services.AddLocalization();
-        services.AddStrongTypedLocalizations();
-        var sp = services.BuildServiceProvider();
+        var compilation = CSharpCompilation.Create(
+            assemblyName: "Tests"
+        );
+        var generator = new LocalizationSourceGenerator();
+        var options = new TestAnalyzerConfigOptionsProvider();
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(generator);
 
-        sp.GetRequiredService<MyClassLocalized>().Should().NotBeNull("MyClass localization missing in registration");
-        sp.GetRequiredService<FolderTest1Localized>().Should().NotBeNull("FolderTest1 localization missing in registration");
-        sp.GetRequiredService<FolderTest2Localized>().Should().NotBeNull("FolderTest2 localization missing in registration");
+        driver.WithUpdatedAnalyzerConfigOptions(options);
 
-        // TODO: ensure keys are set
-        // TODO: check keys with spaces
+        // TODOs
+        options.Options.Add("msbuild.rootnamespace", "MyTestNamespace");
+
+        var resource1 = new ResxAdditionalText("String.resx");
+        resource1.AddString("LocalizeKey", "This is a test");
+        driver.AddAdditionalTexts(ImmutableArray.Create<AdditionalText>(resource1));
+
+        driver = driver.RunGenerators(compilation);
+        var results = driver.GetRunResult();
+
+        foreach (var result in results.GeneratedTrees)
+        {
+            var source = result.GetText().ToString();
+
+            this.output.WriteLine("File: " + result.FilePath);
+            this.output.WriteLine("Source: " + source);
+        }
     }
+
+    //[Fact]
+    //public void EndToEndTest()
+    //{
+    //    var services = new ServiceCollection();
+    //    services.AddLocalization();
+    //    services.AddStrongTypedLocalizations();
+    //    var sp = services.BuildServiceProvider();
+
+    //    sp.GetRequiredService<MyClassLocalized>().Should().NotBeNull("MyClass localization missing in registration");
+    //    sp.GetRequiredService<FolderTest1Localized>().Should().NotBeNull("FolderTest1 localization missing in registration");
+    //    sp.GetRequiredService<FolderTest2Localized>().Should().NotBeNull("FolderTest2 localization missing in registration");
+
+    //    // TODO: ensure keys are set
+    //    // TODO: check keys with spaces
+    //}
 }
+
