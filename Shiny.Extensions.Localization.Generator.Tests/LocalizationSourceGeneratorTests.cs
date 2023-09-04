@@ -28,7 +28,10 @@ public class LocalizationSourceGeneratorTests
         );
         var generator = new LocalizationSourceGenerator().AsSourceGenerator();
         var options = new TestAnalyzerConfigOptionsProvider();
-        options.Options.Add("build_property.RootNamespace", "MyTestNamespace");
+        options.Options.Add("build_property.MSBuildProjectFullPath", "Shiny.Extensions.Localization.Generator");
+        options.Options.Add("build_property.MSBuildProjectName", "MyTest.Core");
+        options.Options.Add("build_property.RootNamespace", "MyTest");
+        
 
         var resource1 = new ResxAdditionalText("Strings.resx");
         resource1.AddString("LocalizeKey", "This is a test");

@@ -65,7 +65,7 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 			file.LocalizedClassName,
 			file.AssociatedClassName
 		);
-		this.generatedClasses.Add($"{file.FileNamespace}.{file.LocalizedClassName}");
+		//this.generatedClasses.Add($"{file.FileNamespace}.{file.LocalizedClassName}");
         context.AddSource($"{file.FileNamespace}.{file.LocalizedClassName}.g.cs", generated);
     }
 

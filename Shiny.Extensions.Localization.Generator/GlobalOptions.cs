@@ -15,11 +15,11 @@ public record GlobalOptions
         if (options.TryGetValue("build_property.MSBuildProjectFullPath", out var projectFullPath))
             this.ProjectFullPath = projectFullPath;
 
-        if (options.TryGetValue("build_property.RootNamespace", out var rootNamespace))     
-            this.RootNamespace = rootNamespace;
-
         if (options.TryGetValue("build_property.MSBuildProjectName", out var projectName))
             this.ProjectName = projectName;
+
+        if (options.TryGetValue("build_property.RootNamespace", out var rootNamespace))     
+            this.RootNamespace = rootNamespace;
     }
 
 
