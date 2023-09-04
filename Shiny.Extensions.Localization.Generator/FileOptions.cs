@@ -12,18 +12,7 @@ public class FileOptions
         GlobalOptions globalOptions
     )
     {
-        //var classNameFromFileName = Utilities.GetClassNameFromPath(resxFilePath);
-
-        //var detectedNamespace = Utilities.GetLocalNamespace(
-        //    resxFilePath,
-        //    options.TryGetValue("build_metadata.EmbeddedResource.Link", out var link) &&
-        //    link is { Length: > 0 }
-        //        ? link
-        //        : null,
-        //    globalOptions.ProjectFullPath,
-        //    globalOptions.ProjectName,
-        //    globalOptions.RootNamespace);
-
+        this.GlobalOptions = globalOptions;
         this.FileNamespace = Utils.GetLocalNamespace(
             additionalText.Path,
             globalOptions.ProjectFullPath,
@@ -37,6 +26,7 @@ public class FileOptions
     }
 
 
+    public GlobalOptions GlobalOptions { get; }
     public string AssociatedClassName { get; }
     public string LocalizedClassName { get; }
     public string FileNamespace { get; }

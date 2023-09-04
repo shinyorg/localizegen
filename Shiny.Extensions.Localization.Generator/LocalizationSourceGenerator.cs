@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using System.Resources.NetStandard;
 using Microsoft.CodeAnalysis;
+using System.Collections.Immutable;
 
 namespace Shiny.Extensions.Localization.Generator;
 
@@ -8,13 +9,8 @@ namespace Shiny.Extensions.Localization.Generator;
 [Generator]
 public class LocalizationSourceGenerator : IIncrementalGenerator
 {
-	List<string> generatedClasses;
-
-
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
-		this.generatedClasses = new();
-
 		var globalOptions = context
             .AnalyzerConfigOptionsProvider
             .Select(GlobalOptions.Select);
@@ -44,29 +40,44 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 				x.Left.Right
 			));
 
+		var monitor = context.CompilationProvider.Combine(inputs.Collect());
+
         context.RegisterSourceOutput(
-			inputs,
+			monitor,
 			(productionContext, sourceContext) => Generate(productionContext, sourceContext)
 		);
 
 		// this happens BEFORE register source output, so no good
 		//context.RegisterPostInitializationOutput(x =>
 		//{
-		//	GenerateServiceCollectionRegistration("TODO", this.generatedClasses);
+		//	
 		//});
     }
 
 
-    void Generate(SourceProductionContext context, FileOptions file)
+    void Generate(SourceProductionContext context, (Compilation Compilation, ImmutableArray<FileOptions> Files) ctx)
 	{
-		var generated = GenerateStronglyTypedClass(
-			file.FileContent,
-			file.FileNamespace,
-			file.LocalizedClassName,
-			file.AssociatedClassName
-		);
-		//this.generatedClasses.Add($"{file.FileNamespace}.{file.LocalizedClassName}");
-        context.AddSource($"{file.FileNamespace}.{file.LocalizedClassName}.g.cs", generated);
+		if (!ctx.Files.Any())
+			return;
+
+		var generatedClasses = new List<string>();
+		var first = ctx.Files.First();
+		var rootNamespace = first.GlobalOptions.RootNamespace ?? first.GlobalOptions.ProjectName!;
+
+		foreach (var file in ctx.Files)
+		{
+            var generated = GenerateStronglyTypedClass(
+                file.FileContent,
+                file.FileNamespace,
+                file.LocalizedClassName,
+                file.AssociatedClassName
+            );
+            generatedClasses.Add($"{file.FileNamespace}.{file.LocalizedClassName}");
+            context.AddSource($"{file.FileNamespace}.{file.LocalizedClassName}.g.cs", generated);
+        }
+
+        var generatedService = GenerateServiceCollectionRegistration(rootNamespace, generatedClasses);
+		context.AddSource("ServiceCollectionExtensions.g.cs", generatedService);
     }
 
 
