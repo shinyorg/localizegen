@@ -1,7 +1,6 @@
 ﻿using System.Text;
-using Microsoft.CodeAnalysis;
 using System.Resources.NetStandard;
-using System.Collections.Immutable;
+using Microsoft.CodeAnalysis;
 
 namespace Shiny.Extensions.Localization.Generator;
 
@@ -9,55 +8,65 @@ namespace Shiny.Extensions.Localization.Generator;
 [Generator]
 public class LocalizationSourceGenerator : IIncrementalGenerator
 {
+	List<string> generatedClasses;
+
+
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
-		var globalOptions = context.AnalyzerConfigOptionsProvider.Select(GlobalOptions.Select);
-		var files = context
+		this.generatedClasses = new();
+
+		var globalOptions = context
+            .AnalyzerConfigOptionsProvider
+            .Select(GlobalOptions.Select);
+
+		var resxFiles = context
 			.AdditionalTextsProvider
 			.Where(static x =>
 			{
-				return x.Path.EndsWith(".resx");
-			})
-			.Select((text, token) => (
-				Path.GetFileNameWithoutExtension(text.Path),
-				text.GetText(token)!.ToString())
-			);
+				// we only care about the default resource files, the ones
+				// without the local Locale.resx vs Locale.fr-CA.resx
+				if (!x.Path.EndsWith(".resx"))
+					return false;
 
-        var compilationAndFiles = context.CompilationProvider.Combine(files.Collect());
+				var count = x.Path.ToCharArray().Count(y => y.Equals('.'));
+				if (count != 1)
+					return false;
+
+				return true;
+			});
+
+		var inputs = resxFiles
+			.Combine(globalOptions)
+			.Combine(context.AnalyzerConfigOptionsProvider)
+			.Select(static (x, _) => FileOptions.Select(
+				x.Left.Left,
+				x.Right,
+				x.Left.Right
+			));
+
         context.RegisterSourceOutput(
-			compilationAndFiles,
+			inputs,
 			(productionContext, sourceContext) => Generate(productionContext, sourceContext)
 		);
+
+		// this happens BEFORE register source output, so no good
+		//context.RegisterPostInitializationOutput(x =>
+		//{
+		//	GenerateServiceCollectionRegistration("TODO", this.generatedClasses);
+		//});
     }
 
 
-    void Generate(SourceProductionContext context, (Compilation compilation, ImmutableArray<(string, string)> files) compilationAndFiles)
+    void Generate(SourceProductionContext context, FileOptions file)
 	{
-		// TODO: make sure I only get the default resx files, not the localization ones
-		var nameSpace = "TODO";
-		var generatedClasses = new List<string>();
-
-		foreach (var file in compilationAndFiles.files)
-		{
-			// TODO: add folder to root namespace
-			var associatedResourceClassName = file.Item1; // TODO: don't get the resource locale
-			var className = associatedResourceClassName + "Localized";
-			var generated = GenerateStronglyTypedClass(
-				file.Item2,
-				nameSpace,
-				className,
-				associatedResourceClassName
-			);
-
-			var fullClassName = $"{nameSpace}.{className}";
-
-            generatedClasses.Add(fullClassName);
-
-			context.AddSource(className + ".g.cs", generated);
-		}
-
-		var serviceCollectionContext = GenerateServiceCollectionRegistration(nameSpace, generatedClasses);
-        context.AddSource("ServiceCollectionRegistration.g.cs", serviceCollectionContext);
+		var generated = GenerateStronglyTypedClass(
+			file.FileContent,
+			file.FileNamespace,
+			file.LocalizedClassName,
+			file.AssociatedClassName
+		);
+		this.generatedClasses.Add($"{file.FileNamespace}.{file.LocalizedClassName}");
+        context.AddSource($"{file.FileNamespace}.{file.LocalizedClassName}.g.cs", generated);
     }
 
 
@@ -65,7 +74,7 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 		string resxContent,
 		string nameSpace,
 		string className,
-		string associatedResourceClassName // name of the actual resource (BIG ASSUMPTION)
+		string associatedResourceClassName
 	)
 	{
 		var sb = new StringBuilder()

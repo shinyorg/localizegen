@@ -4,6 +4,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Collections.Immutable;
 using Xunit.Abstractions;
+using Xunit;
 
 namespace Shiny.Extensions.Localization.Generator.Tests;
 
@@ -27,8 +28,7 @@ public class LocalizationSourceGeneratorTests
         );
         var generator = new LocalizationSourceGenerator().AsSourceGenerator();
         var options = new TestAnalyzerConfigOptionsProvider();
-        // TODOs
-        options.Options.Add("msbuild.rootnamespace", "MyTestNamespace");
+        options.Options.Add("build_property.RootNamespace", "MyTestNamespace");
 
         var resource1 = new ResxAdditionalText("Strings.resx");
         resource1.AddString("LocalizeKey", "This is a test");
