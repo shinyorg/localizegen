@@ -15,7 +15,7 @@ on:
     - preview
     - v*
     paths:
-    - "src/**"
+    - "Shiny.Extensions.Localization.Generator/**"
     - ".github/workflows/**"
 
 jobs:

@@ -126,9 +126,9 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
             .AppendLine()
             .AppendLine($"namespace {rootNamespace};")
             .AppendLine()
-            .Append("public static class Generated")
+            .Append("public static class ServiceCollectionExtensions_Generated")
             .AppendLine("{")
-            .AppendLine("\tpublic static void AddStrongTypedLocalizations(this Microsoft.Extensions.DependencyInjection.IServiceCollection services)")
+            .AppendLine("\tpublic static void AddStronglyTypedLocalizations(this Microsoft.Extensions.DependencyInjection.IServiceCollection services)")
             .AppendLine("\t{");
 
 		// TODO: should I force install localization, add args to allow it to be installed, or just ignore?
