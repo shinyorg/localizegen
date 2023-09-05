@@ -10,7 +10,7 @@ on:
 
   push:
     branches:
-    - master
+    - main
     - dev
     - preview
     - v*
@@ -44,5 +44,5 @@ jobs:
         path: '**/*.nupkg'
 
     - name: Publish NuGets
-      if: ${{ github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/heads/v') }}
+      if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/v') }}
       run: dotnet nuget push **\*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGETAPIKEY }} --skip-duplicate
