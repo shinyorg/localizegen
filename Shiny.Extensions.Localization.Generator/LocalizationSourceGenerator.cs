@@ -46,12 +46,6 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 			monitor,
 			(productionContext, sourceContext) => Generate(productionContext, sourceContext)
 		);
-
-		// this happens BEFORE register source output, so no good
-		//context.RegisterPostInitializationOutput(x =>
-		//{
-		//	
-		//});
     }
 
 
