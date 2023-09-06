@@ -23,6 +23,9 @@ public class LocalizationSourceGeneratorTests
     [Fact]
     public void EndToEndTest()
     {
+        //var services = new ServiceCollection();
+        //services.AddStronglyTypedLocalizations();
+
         var compilation = CSharpCompilation.Create(
             assemblyName: "Tests"
         );
