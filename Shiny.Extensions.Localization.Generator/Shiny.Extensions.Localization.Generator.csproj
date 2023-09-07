@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-        <TargetFrameworks>netstandard2.0;net6.0</TargetFrameworks>
+        <TargetFramework>netstandard2.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <LangVersion>latest</LangVersion>
@@ -37,7 +37,7 @@
               PackagePath="buildTransitive\"
               Pack="true" />
 
-        <None Include="$(OutputPath)\netstandard2.0\$(AssemblyName).dll"
+        <None Include="$(OutputPath)\$(AssemblyName).dll"
               Pack="true"
               PackagePath="analyzers/dotnet/cs"
               Visible="false" />
