@@ -31,7 +31,14 @@
         <None Include="..\nuget.png" Pack="true" PackagePath="icon.png" />
         <None Include="..\readme.md" Pack="true" PackagePath="\" />
         <None Include="build\**" PackagePath="buildTransitive\" Pack="true" />
+        <None Include="$(OutputPath)\$(AssemblyName).dll"
+              Pack="true"
+              PackagePath="analyzers/dotnet/cs"
+              Visible="false" />
 
-        <None Include="$(PkgResXResourceReader_NetStandard)\lib\netstandard2.0\*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+        <None Include="$(PkgResXResourceReader_NetStandard)\lib\netstandard2.0\*.dll" 
+              Pack="true" 
+              PackagePath="analyzers/dotnet/cs" 
+              Visible="false" />
     </ItemGroup>
 </Project>
