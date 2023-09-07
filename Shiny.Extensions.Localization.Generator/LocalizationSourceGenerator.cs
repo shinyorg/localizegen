@@ -1,7 +1,9 @@
 ﻿using System.Text;
-using System.Resources.NetStandard;
 using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
+using System.Xml.Linq;
+using System.Xml.XPath;
+using System.Resources;
 
 namespace Shiny.Extensions.Localization.Generator;
 
@@ -12,8 +14,8 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
 		var globalOptions = context
-            .AnalyzerConfigOptionsProvider
-            .Select(GlobalOptions.Select);
+			.AnalyzerConfigOptionsProvider
+			.Select(GlobalOptions.Select);
 
 		var resxFiles = context
 			.AdditionalTextsProvider
@@ -42,14 +44,14 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 
 		var monitor = context.CompilationProvider.Combine(inputs.Collect());
 
-        context.RegisterSourceOutput(
+		context.RegisterSourceOutput(
 			monitor,
 			(productionContext, sourceContext) => Generate(productionContext, sourceContext)
 		);
-    }
+	}
 
 
-    void Generate(SourceProductionContext context, (Compilation Compilation, ImmutableArray<FileOptions> Files) ctx)
+	void Generate(SourceProductionContext context, (Compilation Compilation, ImmutableArray<FileOptions> Files) ctx)
 	{
 		if (!ctx.Files.Any())
 			return;
@@ -60,22 +62,22 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 
 		foreach (var file in ctx.Files)
 		{
-            var generated = GenerateStronglyTypedClass(
-                file.FileContent,
-                file.FileNamespace,
-                file.LocalizedClassName,
-                file.AssociatedClassName
-            );
-            generatedClasses.Add($"{file.FileNamespace}.{file.LocalizedClassName}");
-            context.AddSource($"{file.FileNamespace}.{file.LocalizedClassName}.g.cs", generated);
-        }
+			var generated = GenerateStronglyTypedClass(
+				file.FileContent,
+				file.FileNamespace,
+				file.LocalizedClassName,
+				file.AssociatedClassName
+			);
+			generatedClasses.Add($"{file.FileNamespace}.{file.LocalizedClassName}");
+			context.AddSource($"{file.FileNamespace}.{file.LocalizedClassName}.g.cs", generated);
+		}
 
-        var generatedService = GenerateServiceCollectionRegistration(rootNamespace, generatedClasses);
+		var generatedService = GenerateServiceCollectionRegistration(rootNamespace, generatedClasses);
 		context.AddSource("ServiceCollectionExtensions.g.cs", generatedService);
-    }
+	}
 
 
-    static string GenerateStronglyTypedClass(
+	static string GenerateStronglyTypedClass(
 		string resxContent,
 		string nameSpace,
 		string className,
@@ -97,16 +99,17 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 
 		using (var stream = new StringReader(resxContent))
 		{
-			var reader = new ResXResourceReader(stream).GetEnumerator();
-			while (reader.MoveNext())
+			var xml = XDocument.Load(stream);
+
+			foreach (var dataElement in xml.XPathSelectElements("//root/data"))
 			{
-				var resourceKey = (string)reader.Key;
+				var resourceKey = dataElement.Attribute("name").Value;
 				var propertyName = SafePropertyKey(resourceKey);
-                sb.AppendLine($"\tpublic string {propertyName} => this.localizer[\"{resourceKey}\"];");
-            }
+				sb.AppendLine($"\tpublic string {propertyName} => this.localizer[\"{resourceKey}\"];");
+			}
 		}
 
-        sb.AppendLine("}");
+		sb.AppendLine("}");
 
 		return sb.ToString();
 	}
@@ -119,28 +122,28 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 	}
 
 
-    static string GenerateServiceCollectionRegistration(string rootNamespace, IEnumerable<string> generatedTypes)
-    {
-        var sb = new StringBuilder()
-            .AppendLine("using global::Microsoft.Extensions.Localization;")
-            .AppendLine("using global::Microsoft.Extensions.DependencyInjection;")
-            .AppendLine()
-            .AppendLine($"namespace {rootNamespace};")
-            .AppendLine()
-            .Append("public static class ServiceCollectionExtensions_Generated")
-            .AppendLine("{")
-            .AppendLine("\tpublic static void AddStronglyTypedLocalizations(this global::Microsoft.Extensions.DependencyInjection.IServiceCollection services)")
-            .AppendLine("\t{");
+	static string GenerateServiceCollectionRegistration(string rootNamespace, IEnumerable<string> generatedTypes)
+	{
+		var sb = new StringBuilder()
+			.AppendLine("using global::Microsoft.Extensions.Localization;")
+			.AppendLine("using global::Microsoft.Extensions.DependencyInjection;")
+			.AppendLine()
+			.AppendLine($"namespace {rootNamespace};")
+			.AppendLine()
+			.Append("public static class ServiceCollectionExtensions_Generated")
+			.AppendLine("{")
+			.AppendLine("\tpublic static void AddStronglyTypedLocalizations(this global::Microsoft.Extensions.DependencyInjection.IServiceCollection services)")
+			.AppendLine("\t{");
 
 		// TODO: should I force install localization, add args to allow it to be installed, or just ignore?
-        foreach (var genType in generatedTypes)
-        {
-            sb.AppendLine($"\t\tservices.AddSingleton<global::{genType}>();");
-        }
-        sb
-            .Append("\t}")
-            .Append("}");
+		foreach (var genType in generatedTypes)
+		{
+			sb.AppendLine($"\t\tservices.AddSingleton<global::{genType}>();");
+		}
+		sb
+			.Append("\t}")
+			.Append("}");
 
-        return sb.ToString();
-    }
+		return sb.ToString();
+	}
 }
