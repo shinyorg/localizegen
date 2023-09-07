@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using FluentAssertions;
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using System.Collections.Immutable;
 using Xunit.Abstractions;

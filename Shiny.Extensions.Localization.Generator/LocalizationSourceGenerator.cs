@@ -87,9 +87,9 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 			.AppendLine()
 			.AppendLine($"public partial class {className}")
 			.AppendLine("{")
-			.AppendLine("\treadonly Microsoft.Extensions.Localization.IStringLocalizer localizer;")
+			.AppendLine("\treadonly global::Microsoft.Extensions.Localization.IStringLocalizer localizer;")
 			.AppendLine()
-			.AppendLine($"\tpublic {className}(IStringLocalizer<{associatedResourceClassName}> localizer)")
+			.AppendLine($"\tpublic {className}(global::Microsoft.Extensions.Localization.IStringLocalizer<global::{nameSpace}.{associatedResourceClassName}> localizer)")
 			.AppendLine("\t{")
 			.AppendLine("\t\tthis.localizer = localizer;")
 			.AppendLine("\t}")
@@ -122,13 +122,13 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
     static string GenerateServiceCollectionRegistration(string rootNamespace, IEnumerable<string> generatedTypes)
     {
         var sb = new StringBuilder()
-            .AppendLine("using Microsoft.Extensions.Localization;")
+            .AppendLine("using global::Microsoft.Extensions.Localization;")
             .AppendLine()
             .AppendLine($"namespace {rootNamespace};")
             .AppendLine()
             .Append("public static class ServiceCollectionExtensions_Generated")
             .AppendLine("{")
-            .AppendLine("\tpublic static void AddStronglyTypedLocalizations(this Microsoft.Extensions.DependencyInjection.IServiceCollection services)")
+            .AppendLine("\tpublic static void AddStronglyTypedLocalizations(this global::Microsoft.Extensions.DependencyInjection.IServiceCollection services)")
             .AppendLine("\t{");
 
 		// TODO: should I force install localization, add args to allow it to be installed, or just ignore?
