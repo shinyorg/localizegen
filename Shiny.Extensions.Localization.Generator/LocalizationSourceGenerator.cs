@@ -1,7 +1,7 @@
 ﻿using System.Text;
 using System.Resources.NetStandard;
-using Microsoft.CodeAnalysis;
 using System.Collections.Immutable;
+using Microsoft.CodeAnalysis;
 
 namespace Shiny.Extensions.Localization.Generator;
 
@@ -123,6 +123,7 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
     {
         var sb = new StringBuilder()
             .AppendLine("using global::Microsoft.Extensions.Localization;")
+            .AppendLine("using global::Microsoft.Extensions.DependencyInjection;")
             .AppendLine()
             .AppendLine($"namespace {rootNamespace};")
             .AppendLine()

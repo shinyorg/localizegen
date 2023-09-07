@@ -38,3 +38,5 @@ public class MyViewModel
 ```xml
 <Label Text="{Binding Localizer.MyKey}" />
 ```
+
+WARNING: If the "class" beside the resource does not exist, a compile error will occur with the generated code

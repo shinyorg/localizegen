@@ -12,7 +12,7 @@ public class Tests
         var services = new ServiceCollection();
         //services.AddStronglyTypedLocalizations();
         var sp = services.BuildServiceProvider();
-        //sp.GetRequiredService<ResourcesLocalized>().LocalizeKey.Should().Be("This is test localization"(;
+        //sp.GetRequiredService<ResourcesLocalized>().LocalizeKey.Should().Be("This is test localization");
     }
 }
 

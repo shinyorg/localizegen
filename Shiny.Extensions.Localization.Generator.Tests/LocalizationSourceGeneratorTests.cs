@@ -18,20 +18,21 @@ public class LocalizationSourceGeneratorTests
     }
 
 
-    [Fact]
-    public void EndToEndTest()
+    [Theory]
+    [InlineData("MyTest", "MyTest.Core")]
+    [InlineData(null, "MyTest")]
+    [InlineData(null, "MyTest.Library")]
+    public void EndToEndTest(string? rootNamespace, string projectName)
     {
-        //var services = new ServiceCollection();
-        //services.AddStronglyTypedLocalizations();
-
         var compilation = CSharpCompilation.Create(
             assemblyName: "Tests"
         );
         var generator = new LocalizationSourceGenerator().AsSourceGenerator();
         var options = new TestAnalyzerConfigOptionsProvider();
         options.Options.Add("build_property.MSBuildProjectFullPath", "Shiny.Extensions.Localization.Generator");
-        options.Options.Add("build_property.MSBuildProjectName", "MyTest.Core");
-        options.Options.Add("build_property.RootNamespace", "MyTest");
+        options.Options.Add("build_property.MSBuildProjectName", projectName);
+        if (rootNamespace != null)
+            options.Options.Add("build_property.RootNamespace", rootNamespace);
         
 
         var resource1 = new ResxAdditionalText("Strings.resx");
