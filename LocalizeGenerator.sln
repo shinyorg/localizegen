@@ -5,15 +5,17 @@ VisualStudioVersion = 17.1.31911.260
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{9A3A7F70-F9F4-431C-9067-C7E7FA01F1CF}"
 	ProjectSection(SolutionItems) = preProject
-		Nuget.config = Nuget.config
-		version.json = version.json
-		README.md = README.md
 		.github\workflows\build.yml = .github\workflows\build.yml
+		LICENSE = LICENSE
+		Nuget.config = Nuget.config
+		nuget.png = nuget.png
+		README.md = README.md
+		version.json = version.json
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shiny.Extensions.Localization.Generator", "Shiny.Extensions.Localization.Generator\Shiny.Extensions.Localization.Generator.csproj", "{4E2B3A95-3682-430B-B7C3-9BB34B832BD5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Shiny.Extensions.Localization.Generator", "Shiny.Extensions.Localization.Generator\Shiny.Extensions.Localization.Generator.csproj", "{4E2B3A95-3682-430B-B7C3-9BB34B832BD5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Shiny.Extensions.Localization.Generator.Tests", "Shiny.Extensions.Localization.Generator.Tests\Shiny.Extensions.Localization.Generator.Tests.csproj", "{6F5B19E1-CE20-4FA0-9D85-4EAA6070A13B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Shiny.Extensions.Localization.Generator.Tests", "Shiny.Extensions.Localization.Generator.Tests\Shiny.Extensions.Localization.Generator.Tests.csproj", "{6F5B19E1-CE20-4FA0-9D85-4EAA6070A13B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -82,8 +84,6 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A538D64A-5BFD-4865-A48D-DF3D69419B83}

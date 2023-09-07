@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
         <TargetFramework>net7.0</TargetFramework>
@@ -26,17 +26,12 @@
         <PackageReference Include="Verify.SourceGenerators" Version="2.1.0" />
         <PackageReference Include="Verify.Xunit" Version="21.0.0" />
         -->
-        <PackageReference Include="Shiny.Extensions.Localization.Generator" Version="1.0.0-alpha-0005" />
+        <PackageReference Include="Shiny.Extensions.Localization.Generator" Version="1.0.0-alpha-0005">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+        </PackageReference>
     </ItemGroup>
     <ItemGroup>
-      <EmbeddedResource Update="Test.resx">
-        <Generator>ResXFileCodeGenerator</Generator>
-        <LastGenOutput>Test.Designer.cs</LastGenOutput>
-      </EmbeddedResource>
-    </ItemGroup>
-    <ItemGroup>
-      <Compile Update="Test.Designer.cs">
-        <DependentUpon>Test.resx</DependentUpon>
-      </Compile>
+        <EmbeddedResource Update="Test.resx" /> 
     </ItemGroup>
 </Project>
