@@ -17,7 +17,7 @@
         <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.7.2" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="7.0.0" />
         <PackageReference Include="Microsoft.Extensions.Localization" Version="7.0.10" />
-        <PackageReference Include="Shiny.Extensions.Localization.Generator" Version="1.0.0-alpha-0013">
+        <PackageReference Include="Shiny.Extensions.Localization.Generator" Version="1.0.0-alpha-0014">
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
             <PrivateAssets>all</PrivateAssets>
         </PackageReference>
