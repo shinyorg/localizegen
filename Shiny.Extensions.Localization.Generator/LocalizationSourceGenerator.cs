@@ -24,7 +24,9 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 				if (!x.Path.EndsWith(".resx"))
 					return false;
 
-				var count = x.Path.ToCharArray().Count(y => y.Equals('.'));
+				var filename = Path.GetFileName(x.Path);
+
+				var count = filename.ToCharArray().Count(y => y.Equals('.'));
 				if (count != 1)
 					return false;
 
