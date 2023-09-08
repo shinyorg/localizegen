@@ -52,23 +52,33 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
     void Generate(SourceProductionContext context, (Compilation Compilation, ImmutableArray<FileOptions> Files) ctx)
 	{
 		if (!ctx.Files.Any())
+		{
+			context.LogDiagnostic("SHINY0000", "No Files found", "No .resx files were found to process.", DiagnosticSeverity.Warning);
 			return;
-
+		}
+		
 		var generatedClasses = new List<string>();
 		var first = ctx.Files.First();
 		var rootNamespace = first.GlobalOptions.RootNamespace ?? first.GlobalOptions.ProjectName!;
 
 		foreach (var file in ctx.Files)
 		{
-            var generated = GenerateStronglyTypedClass(
-                file.FileContent,
-                file.FileNamespace,
-                file.LocalizedClassName,
-                file.AssociatedClassName
-            );
-            generatedClasses.Add($"{file.FileNamespace}.{file.LocalizedClassName}");
-            context.AddSource($"{file.FileNamespace}.{file.LocalizedClassName}.g.cs", generated);
-        }
+			try
+			{
+				var generated = GenerateStronglyTypedClass(
+					file.FileContent,
+					file.FileNamespace,
+					file.LocalizedClassName,
+					file.AssociatedClassName
+				);
+				generatedClasses.Add($"{file.FileNamespace}.{file.LocalizedClassName}");
+				context.AddSource($"{file.FileNamespace}.{file.LocalizedClassName}.g.cs", generated);
+			}
+			catch (Exception ex)
+			{
+				context.LogDiagnostic("SHINY0001", "Error Processing File", $"Processing File: {file.FileNamespace}, Error: {ex}", DiagnosticSeverity.Error);
+			}
+		}
 
         var generatedService = GenerateServiceCollectionRegistration(rootNamespace, generatedClasses);
 		context.AddSource("ServiceCollectionExtensions.g.cs", generatedService);

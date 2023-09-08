@@ -1,10 +1,19 @@
-﻿using System.Text.RegularExpressions;
+﻿using Microsoft.CodeAnalysis;
+using System.Text.RegularExpressions;
 namespace Shiny.Extensions.Localization.Generator;
 
 
 public static class Utils
 {
-    public static string GetLocalNamespace(
+	public static void LogDiagnostic(this SourceProductionContext context, string code, string title, string desc, DiagnosticSeverity severity = DiagnosticSeverity.Info)
+	{
+		context.ReportDiagnostic(
+			Diagnostic.Create(
+				new DiagnosticDescriptor(code, title, desc, "Shiny.Localization", severity, true),
+				Location.None));
+	}
+
+	public static string GetLocalNamespace(
         string? resxPath,
         string projectPath,
         string projectName,
