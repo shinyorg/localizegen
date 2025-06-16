@@ -10,13 +10,13 @@ on:
 
   push:
     branches:
-    - main
-    - dev
-    - preview
-    - v*
+      - main
+      - dev
+      - preview
+      - v*
     paths:
-    - "Shiny.Extensions.Localization.Generator/**"
-    - ".github/workflows/**"
+      - "Shiny.Extensions.Localization.Generator/**"
+      - ".github/workflows/**"
 
 jobs:
   build:
@@ -24,25 +24,40 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
           fetch-depth: 0
 
-    - name: Setup .NET 7.0
-      uses: actions/setup-dotnet@v1
-      with:
-          dotnet-version: '7.0.x'
+      - name: Setup .NET 9.0
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      
+      #    - uses: AdoptOpenJDK/install-jdk@v1
+      #      with:
+      #        version: '13'
+      #        architecture: x64
+      
+      #    - name: Add .NET Workloads
+      #      run: dotnet workload install maui
+      
+      #    - name: Setup Nerdbank GitVersioning
+      #      uses: dotnet/nbgv@master
+      #      id: nbgv
 
-    - name: Build
-      run: dotnet build LocalizeGenerator.sln /restore -m -property:Configuration=Release -property:PublicRelease=true
+      - name: Build
+        run: dotnet build LocalizeGenerator.sln /restore -m -property:Configuration=Release -property:PublicRelease=true
+          
+      #- name: Test
+      #  run: dotnet test Shiny.Extensions.Localization.Generator.Tests/Shiny.Extensions.Localization.Generator.Tests.csproj -c Release --no-build --nologo --no-restore --verbosity normal -l "trx;LogFilePrefix=testresults" --collect "Code Coverage"
 
-    - name: Post NuGet Artifacts
-      uses: actions/upload-artifact@v2
-      with:
-        name: nuget-artifacts
-        path: '**/*.nupkg'
+      - name: Post NuGet Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-artifacts
+          path: '**/*.nupkg'
 
-    - name: Publish NuGets
-      if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/v') }}
-      run: dotnet nuget push **\*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGETAPIKEY }} --skip-duplicate
+      - name: Publish NuGets
+        if: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/v') }}
+        run: dotnet nuget push **\*.nupkg --source https://api.nuget.org/v3/index.json --api-key ${{ secrets.NUGETAPIKEY }} --skip-duplicate
