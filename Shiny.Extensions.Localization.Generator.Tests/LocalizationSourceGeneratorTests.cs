@@ -7,22 +7,13 @@ using Xunit;
 namespace Shiny.Extensions.Localization.Generator.Tests;
 
 
-public class LocalizationSourceGeneratorTests
+public class LocalizationSourceGeneratorTests(ITestOutputHelper output)
 {
-    readonly ITestOutputHelper output;
-
-
-    public LocalizationSourceGeneratorTests(ITestOutputHelper output)
-    {
-        this.output = output;
-    }
-
-
     [Theory]
     [InlineData("MyTest", "MyTest.Core")]
     [InlineData(null, "MyTest")]
     [InlineData(null, "MyTest.Library")]
-    public void EndToEndTest(string? rootNamespace, string projectName)
+    public async Task EndToEndTest(string? rootNamespace, string projectName)
     {
         var compilation = CSharpCompilation.Create(
             assemblyName: "Tests"
@@ -33,7 +24,6 @@ public class LocalizationSourceGeneratorTests
         options.Options.Add("build_property.MSBuildProjectName", projectName);
         if (rootNamespace != null)
             options.Options.Add("build_property.RootNamespace", rootNamespace);
-        
 
         var resource1 = new ResxAdditionalText("Strings.resx");
         resource1.AddString("LocalizeKey", "This is a test");
@@ -47,13 +37,7 @@ public class LocalizationSourceGeneratorTests
         driver = driver.RunGenerators(compilation);
         var results = driver.GetRunResult();
 
-        foreach (var result in results.GeneratedTrees)
-        {
-            var source = result.GetText().ToString();
-
-            this.output.WriteLine("File: " + result.FilePath);
-            this.output.WriteLine("Source: " + source);
-        }
+        await Verify(results).UseParameters(rootNamespace, projectName);
     }
 
     //[Fact]
