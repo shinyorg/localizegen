@@ -3,7 +3,6 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using System.Xml.Linq;
 using System.Xml.XPath;
-using System.Resources;
 
 namespace Shiny.Extensions.Localization.Generator;
 
@@ -71,13 +70,18 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 				file.FileContent,
 				file.FileNamespace,
 				file.LocalizedClassName,
-				file.AssociatedClassName
+				file.AssociatedClassName,
+				first.GlobalOptions.UseInternalAccessor
 			);
 			generatedClasses.Add($"{file.FileNamespace}.{file.LocalizedClassName}");
 			context.AddSource($"{file.FileNamespace}.{file.LocalizedClassName}.g.cs", generated);
 		}
 
-		var generatedService = GenerateServiceCollectionRegistration(rootNamespace, generatedClasses);
+		var generatedService = GenerateServiceCollectionRegistration(
+			rootNamespace, 
+			generatedClasses, 
+			first.GlobalOptions.UseInternalAccessor
+		);
 		context.AddSource("ServiceCollectionExtensions.g.cs", generatedService);
 	}
 
@@ -86,13 +90,16 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 		string resxContent,
 		string nameSpace,
 		string className,
-		string associatedResourceClassName
+		string associatedResourceClassName,
+		bool useInternalAccessor
 	)
 	{
+		var accessor = useInternalAccessor ? "internal" : "public";
+		
 		var sb = new StringBuilder()
 			.AppendLine($"namespace {nameSpace};")
 			.AppendLine()
-			.AppendLine($"public partial class {className}")
+			.AppendLine($"{accessor} partial class {className}")
 			.AppendLine("{")
 			.AppendLine("\treadonly global::Microsoft.Extensions.Localization.IStringLocalizer localizer;")
 			.AppendLine()
@@ -100,6 +107,8 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 			.AppendLine("\t{")
 			.AppendLine("\t\tthis.localizer = localizer;")
 			.AppendLine("\t}")
+			.AppendLine()
+			.AppendLine("\tpublic global::Microsoft.Extensions.Localization.IStringLocalizer Localizer => this.localizer;")
 			.AppendLine();
 
 		using (var stream = new StringReader(resxContent))
@@ -122,20 +131,20 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 
 	static string SafePropertyKey(string keyName)
 	{
-		// TODO: spaces to _, other?
-		return keyName;
+		return keyName
+			.Replace(".", "_")
+			.Replace("-", "_")
+			.Replace(" ", "_");
 	}
 
 
-	static string GenerateServiceCollectionRegistration(string rootNamespace, IEnumerable<string> generatedTypes)
+	static string GenerateServiceCollectionRegistration(string rootNamespace, IEnumerable<string> generatedTypes, bool useInternalAccessor)
 	{
+		var accessor = useInternalAccessor ? "internal" : "public";
 		var sb = new StringBuilder()
-			.AppendLine("using global::Microsoft.Extensions.Localization;")
-			.AppendLine("using global::Microsoft.Extensions.DependencyInjection;")
-			.AppendLine()
 			.AppendLine($"namespace {rootNamespace};")
 			.AppendLine()
-			.Append("public static class ServiceCollectionExtensions_Generated")
+			.AppendLine($"{accessor} static class ServiceCollectionExtensions_Generated")
 			.AppendLine("{")
 			.AppendLine("\tpublic static void AddStronglyTypedLocalizations(this global::Microsoft.Extensions.DependencyInjection.IServiceCollection services)")
 			.AppendLine("\t{");
@@ -146,7 +155,7 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 			sb.AppendLine($"\t\tservices.AddSingleton<global::{genType}>();");
 		}
 		sb
-			.Append("\t}")
+			.AppendLine("\t}")
 			.Append("}");
 
 		return sb.ToString();

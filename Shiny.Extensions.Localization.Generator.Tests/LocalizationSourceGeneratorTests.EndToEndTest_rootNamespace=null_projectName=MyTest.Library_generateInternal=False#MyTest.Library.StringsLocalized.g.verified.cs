@@ -10,5 +10,10 @@ public partial class StringsLocalized
 		this.localizer = localizer;
 	}
 
+	public global::Microsoft.Extensions.Localization.IStringLocalizer Localizer => this.localizer;
+
 	public string LocalizeKey => this.localizer["LocalizeKey"];
+	public string Localized_Space => this.localizer["Localized Space"];
+	public string Localized__Space_Multiple => this.localizer["Localized  Space Multiple"];
+	public string MyNamespace_MyEnum_MyEnumValue => this.localizer["MyNamespace.MyEnum.MyEnumValue"];
 }
