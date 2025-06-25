@@ -34,7 +34,7 @@ public class LocalizationSourceGeneratorTests(ITestOutputHelper output)
         resource1.AddString("MyNamespace.MyEnum.MyEnumValue", "This is an enum value");
 
         GeneratorDriver driver = CSharpGeneratorDriver.Create(
-            new[] { generator },
+            [generator],
             optionsProvider: options,
             additionalTexts: ImmutableArray.Create<AdditionalText>(resource1)
         );
