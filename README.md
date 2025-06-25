@@ -40,3 +40,11 @@ public class MyViewModel
 ```
 
 WARNING: If the "class" beside the resource does not exist, a compile error will occur with the generated code
+
+## Generate Classes with Internal Accessor
+
+```xml
+<PropertyGroup>
+    <GenerateLocalizersInternal>True</GenerateLocalizersInternal>
+</PropertyGroup>
+```

@@ -37,7 +37,7 @@ public class FileOptions
         AdditionalText additionalText,
         AnalyzerConfigOptionsProvider options,
         GlobalOptions globalOptions
-    ) => new FileOptions(
+    ) => new(
         additionalText,
         options.GetOptions(additionalText),
         globalOptions
