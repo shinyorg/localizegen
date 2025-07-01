@@ -14,6 +14,10 @@
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
         <CompilerGeneratedFilesOutputPath>Generated</CompilerGeneratedFilesOutputPath>
         <IsRoslynComponent>true</IsRoslynComponent>
+        <PackageTags>shiny localization sourcegeneration</PackageTags>
+        <RepositoryType>git</RepositoryType>
+        <RepositoryUrl>https://github.com/shinyorg/localizegen</RepositoryUrl>
+        <PackageProjectUrl>https://shinylib.net</PackageProjectUrl>
 	    <!--
         <IncludeBuildOutput>false</IncludeBuildOutput>
         <IsRoslynComponent>true</IsRoslynComponent>
