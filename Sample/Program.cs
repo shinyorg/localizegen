@@ -1,9 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Sample;
 
-//var services = new ServiceCollection();
-//services.AddLocalization();
-//services.AddStronglyTypedLocalizations();
-//services.AddSingleton<SampleClass>();
+var builder = Host.CreateApplicationBuilder();
+builder.Services.AddStronglyTypedLocalizations();
+var app = builder.Build();
 
-Console.WriteLine("Hello, World!");
+var localizer = app.Services.GetRequiredService<SampleClassLocalized>();
+Console.WriteLine(localizer.First);

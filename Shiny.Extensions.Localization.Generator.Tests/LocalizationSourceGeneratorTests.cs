@@ -49,21 +49,27 @@ public class LocalizationSourceGeneratorTests(ITestOutputHelper output)
                 generateInternal
             );
     }
+    
+    [Fact]
+    public Task NoResourcesAddEmptyExtensionMethod()
+    {
+        var compilation = CSharpCompilation.Create(
+            assemblyName: "Tests"
+        );
+        var generator = new LocalizationSourceGenerator().AsSourceGenerator();
+        var options = new TestAnalyzerConfigOptionsProvider();
+        options.Options.Add("build_property.MSBuildProjectFullPath", "Shiny.Extensions.Localization.Generator");
+        options.Options.Add("build_property.MSBuildProjectName", "MyTest.Core");
 
-    //[Fact]
-    //public void EndToEndTest()
-    //{
-    //    var services = new ServiceCollection();
-    //    services.AddLocalization();
-    //    services.AddStrongTypedLocalizations();
-    //    var sp = services.BuildServiceProvider();
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            [generator],
+            optionsProvider: options
+        );
 
-    //    sp.GetRequiredService<MyClassLocalized>().Should().NotBeNull("MyClass localization missing in registration");
-    //    sp.GetRequiredService<FolderTest1Localized>().Should().NotBeNull("FolderTest1 localization missing in registration");
-    //    sp.GetRequiredService<FolderTest2Localized>().Should().NotBeNull("FolderTest2 localization missing in registration");
+        driver = driver.RunGenerators(compilation);
+        var results = driver.GetRunResult();
 
-    //    // TODO: ensure keys are set
-    //    // TODO: check keys with spaces
-    //}
+        return Verify(results);
+    }
 }
 
