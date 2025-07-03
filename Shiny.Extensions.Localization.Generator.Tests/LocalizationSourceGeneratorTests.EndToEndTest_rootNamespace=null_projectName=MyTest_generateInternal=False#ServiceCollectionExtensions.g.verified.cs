@@ -8,8 +8,10 @@ namespace MyTest;
 
 public static class ServiceCollectionExtensions_Generated
 {
-	public static void AddStronglyTypedLocalizations(this global::Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+	public static global::Microsoft.Extensions.DependencyInjection.IServiceCollection AddStronglyTypedLocalizations(this global::Microsoft.Extensions.DependencyInjection.IServiceCollection services)
 	{
+		services.AddLocalization();
 		services.AddSingleton<global::MyTest.StringsLocalized>();
+		return services;
 	}
 }

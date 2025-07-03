@@ -16,6 +16,7 @@ Will generate:
 - Folder1.FolderViewModelLocalized.g.cs (RootNamespace.Folder1.FolderViewModelLocalized)
 - ServiceCollections.g.cs 
 
+
 ## To use this:
 1. Install Microsoft.Extensions.Localization
 2. Install Shiny.Extensions.Localization.Generator
@@ -24,22 +25,24 @@ Will generate:
 builder.Services.AddLocalization();
 builder.Services.AddStronglyTypedLocalizations();
 ```
-4. Now inject the strongly typed classes
+4. Now add an `.resx` file to your project that matches the name of class (ie. ViewModel, Controller, Service, etc).
+5. Now inject the strongly typed classes
 ```csharp
 public class MyViewModel
 {
-    public MyViewModel(MyViewModelLocalized localizer)
+    public MyViewModel(MyViewModelLocalized localizer) // same namespace and class name with "Localized" suffix
         => this.Localizer = localizer;
 
     public MyViewModelLocalized Localizer { get; }
 }
 ```
-5. Now bind (xaml intellisense will pick it up)
+6.Now bind (xaml intellisense will pick it up)
 ```xml
 <Label Text="{Binding Localizer.MyKey}" />
 ```
 
-WARNING: If the "class" beside the resource does not exist, a compile error will occur with the generated code
+> [!WARNING]
+> If the "class" beside the resource does not exist, a compile error will occur with the generated code
 
 ## Generate Classes with Internal Accessor
 

@@ -1,0 +1,17 @@
+﻿{
+  Diagnostics: [
+    {
+      Message: No .resx files were found to process.,
+      Severity: Warning,
+      WarningLevel: 1,
+      Descriptor: {
+        Id: SHINY0000,
+        Title: No Files found,
+        MessageFormat: No .resx files were found to process.,
+        Category: Shiny.Localization,
+        DefaultSeverity: Warning,
+        IsEnabledByDefault: true
+      }
+    }
+  ]
+}
