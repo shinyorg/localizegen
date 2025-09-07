@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 using System.Xml.Linq;
 using System.Xml.XPath;
+using System.Text.RegularExpressions;
 
 namespace Shiny.Extensions.Localization.Generator;
 
@@ -115,9 +116,30 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 
 			foreach (var dataElement in xml.XPathSelectElements("//root/data"))
 			{
-				var resourceKey = dataElement.Attribute("name").Value;
+				var resourceKey = dataElement.Attribute("name")?.Value ?? string.Empty;
+				var resourceValue = dataElement.Element("value")?.Value ?? string.Empty;
 				var propertyName = SafePropertyKey(resourceKey);
-				sb.AppendLine($"\tpublic string {propertyName} => this.localizer[\"{resourceKey}\"];");
+				
+				var formatParameters = GetFormatParameters(resourceValue);
+				
+				if (formatParameters.Any())
+				{
+					// Generate method for format strings
+					var methodName = $"{propertyName}Format";
+					var parameters = string.Join(", ", formatParameters.Select(i => $"object parameter{i}"));
+					var arguments = string.Join(", ", formatParameters.Select(i => $"parameter{i}"));
+					
+					sb.AppendLine($"\tpublic string {methodName}({parameters})");
+					sb.AppendLine("\t{");
+					sb.AppendLine($"\t\treturn string.Format(this.localizer[\"{resourceKey}\"], {arguments});");
+					sb.AppendLine("\t}");
+					sb.AppendLine();
+				}
+				else
+				{
+					// Generate property for simple strings
+					sb.AppendLine($"\tpublic string {propertyName} => this.localizer[\"{resourceKey}\"];");
+				}
 			}
 		}
 
@@ -131,6 +153,28 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 		.Replace(".", "_")
 		.Replace("-", "_")
 		.Replace(" ", "_");
+
+
+	static List<int> GetFormatParameters(string value)
+	{
+		var parameters = new List<int>();
+		var regex = new Regex(@"\{(\d+)\}");
+		var matches = regex.Matches(value);
+		
+		foreach (Match match in matches)
+		{
+			if (int.TryParse(match.Groups[1].Value, out int paramIndex))
+			{
+				if (!parameters.Contains(paramIndex))
+				{
+					parameters.Add(paramIndex);
+				}
+			}
+		}
+		
+		parameters.Sort();
+		return parameters;
+	}
 
 
 	static string GenerateServiceCollectionRegistration(string rootNamespace, IEnumerable<string> generatedTypes, bool useInternalAccessor)

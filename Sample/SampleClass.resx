@@ -123,4 +123,7 @@
   <data name="Second" xml:space="preserve">
     <value>Two</value>
   </data>
+  <data name="MyString" xml:space="preserve">
+    <value>Hello {0} {1}</value>
+  </data>
 </root>

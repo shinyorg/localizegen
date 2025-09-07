@@ -71,5 +71,80 @@ public class LocalizationSourceGeneratorTests(ITestOutputHelper output)
 
         return Verify(results);
     }
-}
+    
+    
+    [Fact]
+    public async Task FormatParameterGenerationTest()
+    {
+        var compilation = CSharpCompilation.Create(
+            assemblyName: "Tests"
+        );
+        var generator = new LocalizationSourceGenerator().AsSourceGenerator();
+        var options = new TestAnalyzerConfigOptionsProvider();
+        options.Options.Add("build_property.MSBuildProjectFullPath", "Shiny.Extensions.Localization.Generator");
+        options.Options.Add("build_property.MSBuildProjectName", "FormatTest");
 
+        var resource1 = new ResxAdditionalText("Messages.resx");
+        // Simple strings should generate properties
+        resource1.AddString("SimpleMessage", "Hello World");
+        resource1.AddString("AnotherSimple", "Welcome to our application");
+        
+        // Format strings should generate methods
+        resource1.AddString("MessageWithOneParameter", "Hello {0}");
+        resource1.AddString("MessageWithTwoParameters", "Hello {0}, you have {1} messages");
+        resource1.AddString("MessageWithThreeParameters", "User {0} logged in at {1} from {2}");
+        
+        // Complex format scenarios
+        resource1.AddString("MessageWithNonSequentialParameters", "Value {2} comes before {0} and {1}");
+        resource1.AddString("MessageWithRepeatedParameters", "Hello {0}, {0} is a nice name!");
+        resource1.AddString("MessageWithMixedContent", "Welcome {0}! Today is a great day.");
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            [generator],
+            optionsProvider: options,
+            additionalTexts: ImmutableArray.Create<AdditionalText>(resource1)
+        );
+
+        driver = driver.RunGenerators(compilation);
+        var results = driver.GetRunResult();
+
+        await Verify(results)
+            .UseMethodName("FormatParameterGenerationTest");
+    }
+    
+    [Fact]
+    public async Task EdgeCaseFormatParameterTest()
+    {
+        var compilation = CSharpCompilation.Create(
+            assemblyName: "Tests"
+        );
+        var generator = new LocalizationSourceGenerator().AsSourceGenerator();
+        var options = new TestAnalyzerConfigOptionsProvider();
+        options.Options.Add("build_property.MSBuildProjectFullPath", "Shiny.Extensions.Localization.Generator");
+        options.Options.Add("build_property.MSBuildProjectName", "EdgeCaseTest");
+
+        var resource1 = new ResxAdditionalText("EdgeCases.resx");
+        // Edge cases that should still generate properties (no valid format parameters)
+        resource1.AddString("BracesButNotFormat", "This has {braces} but not format parameters");
+        resource1.AddString("EmptyBraces", "This has {} empty braces");
+        resource1.AddString("InvalidFormat", "This has {abc} invalid format");
+        resource1.AddString("MixedValidInvalid", "Valid {0} and invalid {abc} parameters");
+        
+        // Edge cases that should generate methods
+        resource1.AddString("SingleParameter", "Only {0} parameter");
+        resource1.AddString("HighNumberParameter", "Parameter with high number {10}");
+        resource1.AddString("ZeroParameter", "Starting with {0}");
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            [generator],
+            optionsProvider: options,
+            additionalTexts: ImmutableArray.Create<AdditionalText>(resource1)
+        );
+
+        driver = driver.RunGenerators(compilation);
+        var results = driver.GetRunResult();
+
+        await Verify(results)
+            .UseMethodName("EdgeCaseFormatParameterTest");
+    }
+}
