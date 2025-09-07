@@ -164,7 +164,7 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 	static List<int> GetFormatParameters(string value)
 	{
 		var parameters = new List<int>();
-		var regex = new Regex(@"\{(\d+)\}");
+		var regex = new Regex(@"\{(\d+)(?::[^}]*)?\}");
 		var matches = regex.Matches(value);
 		
 		foreach (Match match in matches)

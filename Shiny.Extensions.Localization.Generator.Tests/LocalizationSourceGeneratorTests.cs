@@ -147,4 +147,50 @@ public class LocalizationSourceGeneratorTests(ITestOutputHelper output)
         await Verify(results)
             .UseMethodName("EdgeCaseFormatParameterTest");
     }
+    
+    [Fact]
+    public async Task FormatParametersWithFormattingOptionsTest()
+    {
+        var compilation = CSharpCompilation.Create(
+            assemblyName: "Tests"
+        );
+        var generator = new LocalizationSourceGenerator().AsSourceGenerator();
+        var options = new TestAnalyzerConfigOptionsProvider();
+        options.Options.Add("build_property.MSBuildProjectFullPath", "Shiny.Extensions.Localization.Generator");
+        options.Options.Add("build_property.MSBuildProjectName", "FormattingTest");
+
+        var resource1 = new ResxAdditionalText("Formatting.resx");
+        
+        // Format strings with formatting options - should generate methods
+        resource1.AddString("DateFormatMessage", "Today is {0:MMM dd yyyy}");
+        resource1.AddString("CurrencyFormatMessage", "Total cost: {0:C2}");
+        resource1.AddString("PercentageFormatMessage", "Success rate: {0:P2}");
+        resource1.AddString("NumberFormatMessage", "Value: {0:N2}");
+        resource1.AddString("CustomDateTimeFormat", "Event scheduled for {0:yyyy-MM-dd HH:mm:ss}");
+        
+        // Multiple parameters with different formatting
+        resource1.AddString("MixedFormattingMessage", "Date: {0:MMM dd yyyy}, Amount: {1:C2}, Rate: {2:P1}");
+        resource1.AddString("DateRangeMessage", "From {0:yyyy-MM-dd} to {1:yyyy-MM-dd}");
+        
+        // Complex formatting with text
+        resource1.AddString("DetailedReportMessage", "Report generated on {0:dddd, MMMM dd, yyyy} at {1:HH:mm:ss} for user {2}");
+        
+        // Formatting with repeated parameters
+        resource1.AddString("RepeatedFormattedParameter", "Start: {0:HH:mm}, End: {0:HH:mm:ss}");
+        
+        // Mixed - some with formatting, some without
+        resource1.AddString("MixedParameterTypes", "User {0} logged in at {1:yyyy-MM-dd HH:mm} from location {2}");
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            [generator],
+            optionsProvider: options,
+            additionalTexts: ImmutableArray.Create<AdditionalText>(resource1)
+        );
+
+        driver = driver.RunGenerators(compilation);
+        var results = driver.GetRunResult();
+
+        await Verify(results)
+            .UseMethodName("FormatParametersWithFormattingOptionsTest");
+    }
 }
