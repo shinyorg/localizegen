@@ -124,6 +124,6 @@
     <value>Two</value>
   </data>
   <data name="MyString" xml:space="preserve">
-    <value>Hello {0} {1}</value>
+    <value>Hello {0}, welcome to {1}!</value>
   </data>
 </root>

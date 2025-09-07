@@ -129,6 +129,9 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 					var parameters = string.Join(", ", formatParameters.Select(i => $"object parameter{i}"));
 					var arguments = string.Join(", ", formatParameters.Select(i => $"parameter{i}"));
 					
+					sb.AppendLine("\t/// <summary>");
+					sb.AppendLine($"\t/// {EscapeXmlComment(resourceValue)}");
+					sb.AppendLine("\t/// </summary>");
 					sb.AppendLine($"\tpublic string {methodName}({parameters})");
 					sb.AppendLine("\t{");
 					sb.AppendLine($"\t\treturn string.Format(this.localizer[\"{resourceKey}\"], {arguments});");
@@ -138,6 +141,9 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 				else
 				{
 					// Generate property for simple strings
+					sb.AppendLine("\t/// <summary>");
+					sb.AppendLine($"\t/// {EscapeXmlComment(resourceValue)}");
+					sb.AppendLine("\t/// </summary>");
 					sb.AppendLine($"\tpublic string {propertyName} => this.localizer[\"{resourceKey}\"];");
 				}
 			}
@@ -174,6 +180,20 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 		
 		parameters.Sort();
 		return parameters;
+	}
+
+
+	static string EscapeXmlComment(string value)
+	{
+		if (string.IsNullOrEmpty(value))
+			return string.Empty;
+			
+		return value
+			.Replace("&", "&amp;")
+			.Replace("<", "&lt;")
+			.Replace(">", "&gt;")
+			.Replace("\"", "&quot;")
+			.Replace("'", "&apos;");
 	}
 
 
