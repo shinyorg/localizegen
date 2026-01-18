@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿﻿using System.Text;
+using System.Security;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Text;
 
@@ -7,12 +8,18 @@ namespace Shiny.Extensions.Localization.Generator.Tests;
 
 public class ResxAdditionalText : AdditionalText
 {
-	readonly Dictionary<string, string> strings = new();
+	readonly Dictionary<string, (string Value, string? Comment)> strings = new();
 	public ResxAdditionalText(string path) => this.Path = path;
 
     public ResxAdditionalText AddString(string key, string value)
 	{
-		this.strings.Add(key, value);
+		this.strings.Add(key, (value, null));
+		return this;
+	}
+
+    public ResxAdditionalText AddStringWithComment(string key, string value, string comment)
+	{
+		this.strings.Add(key, (value, comment));
 		return this;
 	}
 
@@ -39,13 +46,22 @@ public class ResxAdditionalText : AdditionalText
 """);
 		foreach (var pair in this.strings)
 		{
-			sb.AppendLine($"<data name=\"{pair.Key}\" xml:space=\"preserve\">");
-			sb.AppendLine($"<value>{pair.Value}</value>");
+			sb.AppendLine($"<data name=\"{EscapeXml(pair.Key)}\" xml:space=\"preserve\">");
+			sb.AppendLine($"<value>{EscapeXml(pair.Value.Value)}</value>");
+			if (!string.IsNullOrEmpty(pair.Value.Comment))
+			{
+				sb.AppendLine($"<comment>{EscapeXml(pair.Value.Comment)}</comment>");
+			}
 			sb.AppendLine("</data>");
 		}
 		sb.Append("</root>");
 
 		return SourceText.From(sb.ToString(), Encoding.UTF8);
+	}
+
+	static string EscapeXml(string value)
+	{
+		return SecurityElement.Escape(value) ?? value;
 	}
 }
 /*
