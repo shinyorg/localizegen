@@ -1,0 +1,26 @@
+{
+  "name": "localizegen",
+  "version": "1.0.0",
+  "description": "Claude Code plugin for Shiny Localization Generator - a Roslyn source generator that creates strongly-typed localization classes from .resx files for Microsoft.Extensions.Localization",
+  "author": {
+    "name": "Shiny",
+    "email": "hello@shinylib.net",
+    "url": "https://shinylib.net"
+  },
+  "homepage": "https://github.com/shinyorg/localizegen",
+  "repository": "https://github.com/shinyorg/localizegen",
+  "license": "MIT",
+  "keywords": [
+    "localization",
+    "resx",
+    "source-generator",
+    "dotnet",
+    "strongly-typed",
+    "IStringLocalizer",
+    "Microsoft.Extensions.Localization",
+    "i18n",
+    "internationalization",
+    "resources"
+  ],
+  "skills": "./skills/"
+}
