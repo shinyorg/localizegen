@@ -118,19 +118,28 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 			{
 				var resourceKey = dataElement.Attribute("name")?.Value ?? string.Empty;
 				var resourceValue = dataElement.Element("value")?.Value ?? string.Empty;
+				var resourceComment = dataElement.Element("comment")?.Value ?? string.Empty;
 				var propertyName = SafePropertyKey(resourceKey);
 				
 				var formatParameters = GetFormatParameters(resourceValue);
 				
+				// Use comment if available, otherwise use value as fallback
+				var summaryText = !string.IsNullOrEmpty(resourceComment) 
+					? resourceComment 
+					: resourceValue;
+				
 				if (formatParameters.Any())
 				{
 					// Generate method for format strings
-					var methodName = $"{propertyName}Format";
+					// Avoid double "Format" suffix if property name already ends with Format
+					var methodName = propertyName.EndsWith("Format", StringComparison.Ordinal) 
+						? propertyName 
+						: $"{propertyName}Format";
 					var parameters = string.Join(", ", formatParameters.Select(i => $"object parameter{i}"));
 					var arguments = string.Join(", ", formatParameters.Select(i => $"parameter{i}"));
 					
 					sb.AppendLine("\t/// <summary>");
-					sb.AppendLine($"\t/// {EscapeXmlComment(resourceValue)}");
+					sb.AppendLine($"\t/// {EscapeXmlComment(summaryText)}");
 					sb.AppendLine("\t/// </summary>");
 					sb.AppendLine($"\tpublic string {methodName}({parameters})");
 					sb.AppendLine("\t{");
@@ -142,7 +151,7 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 				{
 					// Generate property for simple strings
 					sb.AppendLine("\t/// <summary>");
-					sb.AppendLine($"\t/// {EscapeXmlComment(resourceValue)}");
+					sb.AppendLine($"\t/// {EscapeXmlComment(summaryText)}");
 					sb.AppendLine("\t/// </summary>");
 					sb.AppendLine($"\tpublic string {propertyName} => this.localizer[\"{resourceKey}\"];");
 				}
@@ -187,13 +196,16 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 	{
 		if (string.IsNullOrEmpty(value))
 			return string.Empty;
-			
+
 		return value
 			.Replace("&", "&amp;")
 			.Replace("<", "&lt;")
 			.Replace(">", "&gt;")
 			.Replace("\"", "&quot;")
-			.Replace("'", "&apos;");
+			.Replace("'", "&apos;")
+			.Replace("\r\n", " ")
+			.Replace("\r", " ")
+			.Replace("\n", " ");
 	}
 
 

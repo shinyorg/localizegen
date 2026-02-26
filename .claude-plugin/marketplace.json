@@ -1,0 +1,14 @@
+{
+  "name": "shiny-plugins",
+  "owner": {
+    "name": "Shiny",
+    "email": "hello@shinylib.net"
+  },
+  "plugins": [
+    {
+      "name": "localizegen",
+      "source": "./",
+      "description": "Claude Code plugin for Shiny Localization Generator - strongly-typed localization class generation from .resx files for .NET applications"
+    }
+  ]
+}

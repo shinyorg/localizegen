@@ -47,7 +47,7 @@ public partial class FormattingLocalized
 	/// <summary>
 	/// Event scheduled for {0:yyyy-MM-dd HH:mm:ss}
 	/// </summary>
-	public string CustomDateTimeFormatFormat(object parameter0)
+	public string CustomDateTimeFormat(object parameter0)
 	{
 		return string.Format(this.localizer["CustomDateTimeFormat"], parameter0);
 	}

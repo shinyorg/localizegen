@@ -193,4 +193,54 @@ public class LocalizationSourceGeneratorTests(ITestOutputHelper output)
         await Verify(results)
             .UseMethodName("FormatParametersWithFormattingOptionsTest");
     }
+
+    [Fact]
+    public async Task CommentsInResxFileTest()
+    {
+        var compilation = CSharpCompilation.Create(
+            assemblyName: "Tests"
+        );
+        var generator = new LocalizationSourceGenerator().AsSourceGenerator();
+        var options = new TestAnalyzerConfigOptionsProvider();
+        options.Options.Add("build_property.MSBuildProjectFullPath", "Shiny.Extensions.Localization.Generator");
+        options.Options.Add("build_property.MSBuildProjectName", "CommentsTest");
+
+        var resource1 = new ResxAdditionalText("Strings.resx");
+        
+        // Simple property with comment - should use comment in summary
+        resource1.AddStringWithComment("WelcomeMessage", "Welcome to our application", "Displayed on the home screen when user first opens the app");
+        
+        // Simple property without comment - should fall back to value
+        resource1.AddString("GoodbyeMessage", "Goodbye and see you later");
+        
+        // Format method with comment - should use comment in summary
+        resource1.AddStringWithComment("GreetingFormat", "Hello {0}!", "Greeting message where {0} is the user's name");
+        
+        // Format method without comment - should fall back to value
+        resource1.AddString("FarewellFormat", "Goodbye {0}, see you tomorrow!");
+        
+        // Multiple parameters with comment
+        resource1.AddStringWithComment("DetailedGreeting", "Hello {0}, you have {1} new messages from {2}", "Full greeting with user name, message count, and sender name");
+        
+        // Comment with special characters that need XML escaping
+        resource1.AddStringWithComment("SpecialComment", "Test value", "Comment with <special> & \"characters\" to 'escape'");
+
+        // Comment with newlines that could break out of XML doc comments
+        resource1.AddStringWithComment("MultiLineComment", "Multi line value", "First line\nSecond line\r\nThird line");
+        
+        // Format with formatting options and comment
+        resource1.AddStringWithComment("DateGreeting", "Today is {0:MMMM dd, yyyy}", "Shows the current date in long format");
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            [generator],
+            optionsProvider: options,
+            additionalTexts: ImmutableArray.Create<AdditionalText>(resource1)
+        );
+
+        driver = driver.RunGenerators(compilation);
+        var results = driver.GetRunResult();
+
+        await Verify(results)
+            .UseMethodName("CommentsInResxFileTest");
+    }
 }
