@@ -49,6 +49,10 @@ public partial class StringsLocalized
 	/// </summary>
 	public string SpecialComment => this.localizer["SpecialComment"];
 	/// <summary>
+	/// First line Second line Third line
+	/// </summary>
+	public string MultiLineComment => this.localizer["MultiLineComment"];
+	/// <summary>
 	/// Shows the current date in long format
 	/// </summary>
 	public string DateGreetingFormat(object parameter0)

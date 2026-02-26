@@ -196,13 +196,16 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 	{
 		if (string.IsNullOrEmpty(value))
 			return string.Empty;
-			
+
 		return value
 			.Replace("&", "&amp;")
 			.Replace("<", "&lt;")
 			.Replace(">", "&gt;")
 			.Replace("\"", "&quot;")
-			.Replace("'", "&apos;");
+			.Replace("'", "&apos;")
+			.Replace("\r\n", " ")
+			.Replace("\r", " ")
+			.Replace("\n", " ");
 	}
 
 

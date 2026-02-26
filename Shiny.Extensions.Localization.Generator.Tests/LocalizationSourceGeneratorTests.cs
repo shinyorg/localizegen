@@ -224,6 +224,9 @@ public class LocalizationSourceGeneratorTests(ITestOutputHelper output)
         
         // Comment with special characters that need XML escaping
         resource1.AddStringWithComment("SpecialComment", "Test value", "Comment with <special> & \"characters\" to 'escape'");
+
+        // Comment with newlines that could break out of XML doc comments
+        resource1.AddStringWithComment("MultiLineComment", "Multi line value", "First line\nSecond line\r\nThird line");
         
         // Format with formatting options and comment
         resource1.AddStringWithComment("DateGreeting", "Today is {0:MMMM dd, yyyy}", "Shows the current date in long format");
