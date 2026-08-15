@@ -1,4 +1,4 @@
-name: Sync Skills to Skills Repository
+name: Sync Skills
 
 on:
   push:
@@ -30,33 +30,55 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Sync skills directory
+      - name: Sync skills into the shiny plugin
+        env:
+          SOURCE_DIR: skills
         run: |
-          # Copy skills content only (not plugin manifests)
-          # The target repo has its own plugin structure
-          if [ -d "source/skills/localizegen" ]; then
-            # Remove existing skill directory to ensure clean sync
-            rm -rf skills-repo/skills/localizegen
-            mkdir -p skills-repo/skills
-            cp -r source/skills/localizegen skills-repo/skills/
+          set -euo pipefail
+
+          # All Shiny skills live in a single "shiny" plugin in shinyorg/skills.
+          # Every skill directory under $SOURCE_DIR is copied whole, so SKILL.md
+          # plus any reference/ content syncs together.
+          target_dir="skills-repo/plugins/shiny/skills"
+
+          if [ ! -d "$target_dir" ]; then
+            echo "::error::$target_dir does not exist in shinyorg/skills — has the plugin been renamed?"
+            exit 1
           fi
+
+          synced=0
+          for skill_dir in "source/$SOURCE_DIR"/*/; do
+            [ -d "$skill_dir" ] || continue
+            skill_name=$(basename "$skill_dir")
+            echo "Syncing $skill_name -> plugins/shiny/skills/$skill_name"
+            rm -rf "${target_dir:?}/$skill_name"
+            cp -r "$skill_dir" "$target_dir/$skill_name"
+            synced=$((synced + 1))
+          done
+
+          if [ "$synced" -eq 0 ]; then
+            echo "::error::No skills found under $SOURCE_DIR/ — nothing to sync."
+            exit 1
+          fi
+          echo "Synced $synced skill(s)."
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ secrets.SKILLS_REPO_TOKEN }}
           path: skills-repo
-          commit-message: "Update localizegen skill from localizegen repository"
-          title: "Update localizegen skill"
+          commit-message: "Update skills from shinyorg/localizegen"
+          title: "Update skills from Shiny Localization Generator"
           body: |
-            This PR updates the localizegen skill from the [localizegen repository](https://github.com/shinyorg/localizegen).
+            This PR updates the `shiny` plugin skills from the [Shiny Localization Generator repository](https://github.com/shinyorg/localizegen).
 
+            **Source branch:** `${{ github.ref_name }}`
             **Source commit:** ${{ github.sha }}
             **Triggered by:** @${{ github.actor }}
 
             ---
             *This PR was automatically created by the [sync-skills workflow](https://github.com/shinyorg/localizegen/actions/workflows/sync-skills.yml).*
-          branch: update-localizegen-skill
+          branch: update-skills-localizegen
           delete-branch: true
           labels: |
             automated
