@@ -10,6 +10,7 @@
         <PackageReadmeFile>readme.md</PackageReadmeFile>
         <PackageIcon>icon.png</PackageIcon>
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Copyright>Copyright (c) $([System.DateTime]::Now.Year) Allan Ritchie</Copyright>
         <DevelopmentDependency>true</DevelopmentDependency>
         <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
