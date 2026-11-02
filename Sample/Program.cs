@@ -10,3 +10,6 @@ var localizer = app.Services.GetRequiredService<SampleClassLocalized>();
 Console.WriteLine(localizer.First);
 Console.WriteLine(localizer.Second);
 Console.WriteLine(localizer.MyStringFormat("Allan", "Ritchie"));
+
+var localizerNoClass = app.Services.GetRequiredService<TestNoClassLocalized>();
+Console.WriteLine(localizerNoClass.MyString);
