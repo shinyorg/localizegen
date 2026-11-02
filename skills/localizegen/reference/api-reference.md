@@ -77,6 +77,30 @@ public static class ServiceCollectionExtensions_Generated
 - Namespace is the project's `RootNamespace` (or `ProjectName` if `RootNamespace` is not set)
 - Uses `internal` accessor when `GenerateLocalizersInternal` is `true`
 
+### GeneratedLocalizers
+
+A reflection-free list of every generated localizer, safe under trimming and NativeAOT:
+
+```csharp
+public static class GeneratedLocalizers
+{
+    public static readonly (string Name, Type ResourceSource, Type LocalizedType)[] All = new (string Name, Type ResourceSource, Type LocalizedType)[]
+    {
+        ("MyViewModel", typeof(MyApp.MyViewModel), typeof(MyApp.MyViewModelLocalized)),
+        ("Errors.Validation", typeof(MyApp.Errors.Validation), typeof(MyApp.Errors.ValidationLocalized)),
+    };
+}
+```
+
+- `Name` is the `.resx` file name without extension; `ResourceSource` is the `T` for `IStringLocalizer<T>`; `LocalizedType` is the generated wrapper
+- Same namespace and accessor rules as `ServiceCollectionExtensions_Generated`; empty array when there are no `.resx` files
+- Build a name lookup with `GeneratedLocalizers.All.ToDictionary(x => x.Name, x => factory.Create(x.ResourceSource))` using `IStringLocalizerFactory`
+
+### Associated Class
+
+- If no class `{Namespace}.{ClassName}` exists in the project being compiled, an empty `partial class` is generated for it
+- The `*Localized` class is `public` when the associated class is public and `internal` otherwise; `GenerateLocalizersInternal` applies only to generated associated classes
+
 ## MSBuild Properties
 
 Configure the generator via MSBuild properties in your `.csproj`:
@@ -137,20 +161,29 @@ The generated class namespace is computed from:
 | `MyApp` | `MyClass.resx` | `MyApp` |
 | `MyApp` | `Folder1/MyClass.resx` | `MyApp.Folder1` |
 | `MyApp` | `Features/Auth/LoginPage.resx` | `MyApp.Features.Auth` |
+| `MyApp` | `Errors.Validation.resx` | `MyApp.Errors` (class `Validation`) |
 
 ## File Filtering
 
-The generator only processes `.resx` files that:
-- Have exactly one dot in the filename (e.g., `MyClass.resx`)
-- Files with multiple dots are skipped (e.g., `MyClass.fr-ca.resx` is a locale variant, not processed)
+Only default `.resx` files generate a class; culture files (`MyClass.fr-ca.resx`, `MyClass.de.resx`) are used at runtime by `IStringLocalizer`. A file is a culture file when:
+1. MSBuild says so (`WithCulture` metadata on the `EmbeddedResource`, the same check that builds satellite assemblies) - always used when available
+2. Otherwise, its last segment is a culture name known to the machine
+3. Otherwise (no culture data, e.g. invariant globalization), its default file (`MyClass.resx`) exists
 
-This ensures only the default locale file generates the strongly-typed class, while locale variants are used at runtime by `IStringLocalizer`.
+Extra dots in a default file name become namespace segments (`Errors.Validation.resx` → `MyApp.Errors.ValidationLocalized`), matching the manifest resource name MSBuild embeds.
+
+### Diagnostics
+
+| Id | Severity | When |
+|----|----------|------|
+| `SHINY0000` | Warning | No default `.resx` files were found |
+| `SHINY0001` | Warning | A culture file has no default file (e.g. `Orphan.de.resx` without `Orphan.resx`) |
 
 ## Troubleshooting
 
 ### Compile error in generated code
-- Ensure the associated C# class exists with the same name as the `.resx` file
-- Example: `MyViewModel.resx` requires `MyViewModel.cs` in the same namespace
+- If you declared the associated class, ensure it is in the same namespace as the generated `*Localized` class
+- A `.Designer.cs` from Visual Studio's `ResXFileCodeGenerator` is picked up as the associated class; set the `.resx` Access Modifier to "No code generation" to remove it
 
 ### AddStronglyTypedLocalizations not found
 - Ensure `Shiny.Extensions.Localization.Generator` NuGet is installed
@@ -161,7 +194,7 @@ This ensures only the default locale file generates the strongly-typed class, wh
 - Verify the `.resx` file is included as `EmbeddedResource` in the project
 - The `.props` file included with the package automatically configures `AdditionalFiles`
 - Clean and rebuild the project
-- Check that the `.resx` file has only one dot in its name (default locale only)
+- Check that the file isn't being treated as a culture file - a last segment like `.de` or `.fr-ca` marks a translation, and a translation with no default file raises `SHINY0001`
 
 ### Wrong namespace on generated class
 - Check your `RootNamespace` in `.csproj`

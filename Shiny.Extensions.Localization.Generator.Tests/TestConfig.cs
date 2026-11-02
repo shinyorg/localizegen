@@ -25,6 +25,10 @@ public class TestAnalyzerConfigOptions : AnalyzerConfigOptions
 public class TestAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsProvider
 {
     public Dictionary<string, string> Options { get; set; } = new();
+    /// <summary>
+    /// Per-file options keyed by AdditionalText.Path (e.g. build_metadata.EmbeddedResource.WithCulture), layered over Options
+    /// </summary>
+    public Dictionary<string, Dictionary<string, string>> FileOptions { get; set; } = new();
     readonly TestAnalyzerConfigOptions options;
 
 
@@ -41,5 +45,17 @@ public class TestAnalyzerConfigOptionsProvider : AnalyzerConfigOptionsProvider
 
     public override AnalyzerConfigOptions GlobalOptions => this.options;
     public override AnalyzerConfigOptions GetOptions(SyntaxTree tree) => this.options;
-    public override AnalyzerConfigOptions GetOptions(AdditionalText textFile) => this.options;
+    public override AnalyzerConfigOptions GetOptions(AdditionalText textFile)
+    {
+        if (!this.FileOptions.TryGetValue(textFile.Path, out var fileOptions))
+            return this.options;
+
+        return new TestAnalyzerConfigOptions(key =>
+        {
+            if (fileOptions.TryGetValue(key, out var value))
+                return value;
+
+            return this.Options.TryGetValue(key, out value) ? value : null;
+        });
+    }
 }

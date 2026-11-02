@@ -64,9 +64,12 @@ builder.Services.AddStronglyTypedLocalizations();
 ```
 
 ### Important Notes
-- Every `.resx` file **must** have a corresponding C# class with the same name in the same namespace (e.g., `MyViewModel.resx` requires `MyViewModel.cs`)
-- If the associated class does not exist, the generated code will produce a compile error
-- Only the default locale `.resx` file is processed (e.g., `MyViewModel.resx`), locale-specific files like `MyViewModel.fr-ca.resx` are handled by the localization framework at runtime
+- Each `.resx` file is paired with a C# class of the same name in the same namespace (e.g., `MyViewModel.resx` pairs with `MyViewModel`). If that class doesn't exist, the generator creates an empty `partial class` for it, so no stub class is needed
+- The generated `*Localized` class matches the visibility of its paired class (`public` or `internal`); `GenerateLocalizersInternal` only applies when the generator creates the class
+- Only default `.resx` files are processed (e.g., `MyViewModel.resx`). Culture files like `MyViewModel.fr-ca.resx` are handled by the localization framework at runtime; the generator uses MSBuild's culture detection to tell them apart
+- Dots in a default file name become namespace segments: `Errors.Validation.resx` → `{Namespace}.Errors.ValidationLocalized`, paired with `{Namespace}.Errors.Validation`
+- A culture file with no default file (e.g., `Orphan.de.resx` without `Orphan.resx`) raises warning `SHINY0001`
+- `GeneratedLocalizers.All` lists every generated localizer as `(Name, ResourceSource, LocalizedType)` without reflection (trim/NativeAOT safe)
 - The generator produces a `{ClassName}Localized` class (e.g., `MyViewModelLocalized`) for each `.resx` file
 
 ## How It Works
@@ -236,13 +239,14 @@ Console.WriteLine(localizer.UserGreetingFormat("Allan", "MyApp"));
 
 ## Best Practices
 
-1. **Always create the associated class** - Every `.resx` file must have a matching C# class or a compile error will occur
+1. **The associated class is optional** - Declare it when you want it (any visibility, partial or not); otherwise the generator creates an empty partial class
 2. **Use comments in .resx** - Comments become XML documentation on generated properties/methods
 3. **Use format parameters for dynamic content** - `{0}`, `{1}` etc. generate type-safe methods
 4. **Use default locale for generation** - Only `ClassName.resx` is processed; `ClassName.fr-ca.resx` is for runtime localization
-5. **Inject the Localized class** - Use DI to inject `{ClassName}Localized`, not `IStringLocalizer` directly
-6. **Expose the raw localizer** - The generated class exposes `Localizer` property for edge cases needing `IStringLocalizer`
-7. **Namespace follows folder structure** - Organize `.resx` files in folders to match your namespace conventions
+5. **Turn off Visual Studio's resource generator** - Set the `.resx` editor's Access Modifier to "No code generation" so no `ResXFileCodeGenerator` / `.Designer.cs` static class is created
+6. **Inject the Localized class** - Use DI to inject `{ClassName}Localized`, not `IStringLocalizer` directly
+7. **Expose the raw localizer** - The generated class exposes `Localizer` property for edge cases needing `IStringLocalizer`
+8. **Namespace follows folder structure** - Organize `.resx` files in folders to match your namespace conventions
 
 ## Reference Files
 

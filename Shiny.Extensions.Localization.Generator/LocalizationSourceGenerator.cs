@@ -11,6 +11,17 @@ namespace Shiny.Extensions.Localization.Generator;
 [Generator]
 public class LocalizationSourceGenerator : IIncrementalGenerator
 {
+#pragma warning disable RS2008 // no analyzer release tracking in this project
+	static readonly DiagnosticDescriptor OrphanedCultureFile = new(
+		"SHINY0001",
+		"Culture resource file has no default resource file",
+		"'{0}' is a '{1}' culture file, but '{2}' does not exist, so no localizer was generated for it. Add '{2}' with the default strings.",
+		"Shiny.Localization",
+		DiagnosticSeverity.Warning,
+		true
+	);
+#pragma warning restore RS2008
+
 	public void Initialize(IncrementalGeneratorInitializationContext context)
 	{
 		var globalOptions = context
@@ -19,21 +30,8 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 
 		var resxFiles = context
 			.AdditionalTextsProvider
-			.Where(static x =>
-			{
-				// we only care about the default resource files, the ones
-				// without the local Locale.resx vs Locale.fr-CA.resx
-				if (!x.Path.EndsWith(".resx"))
-					return false;
-
-				var filename = Path.GetFileName(x.Path);
-
-				var count = filename.ToCharArray().Count(y => y.Equals('.'));
-				if (count != 1)
-					return false;
-
-				return true;
-			});
+			// culture files (Strings.de.resx) are sorted out in Generate once all files are known
+			.Where(static x => x.Path.EndsWith(".resx", StringComparison.OrdinalIgnoreCase));
 
 		var inputs = resxFiles
 			.Combine(globalOptions)
@@ -55,16 +53,28 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 
 	void Generate(SourceProductionContext context, (Compilation Compilation, ImmutableArray<FileOptions> Files) ctx)
 	{
-		if (!ctx.Files.Any())
+		var defaultFiles = ResxClassifier.GetDefaultFiles(ctx.Files, out var orphanedCultureFiles);
+		foreach (var orphan in orphanedCultureFiles)
+		{
+			context.ReportDiagnostic(Diagnostic.Create(
+				OrphanedCultureFile,
+				Location.Create(orphan.File.FilePath, default, default),
+				Path.GetFileName(orphan.File.FilePath),
+				orphan.Culture,
+				orphan.DefaultFileName
+			));
+		}
+
+		if (!defaultFiles.Any())
 			context.LogDiagnostic("SHINY0000", "No Files found", "No .resx files were found to process.", DiagnosticSeverity.Warning);
 		
 		var generatedClasses = new List<string>();
 		var registry = new List<(string Name, string ResourceSource, string LocalizedType)>();
-		var first = ctx.Files.FirstOrDefault();
+		var first = defaultFiles.FirstOrDefault();
 		var rootNamespace = first?.GlobalOptions.RootNamespace ?? first?.GlobalOptions.ProjectName!;
 		var internalAccessor = first?.GlobalOptions.UseInternalAccessor ?? false;
 		
-		foreach (var file in ctx.Files)
+		foreach (var file in defaultFiles)
 		{
 			// match the visibility of the user's associated class when it exists in this assembly,
 			// otherwise fall back to GenerateLocalizersInternal (and stub the class below)
@@ -83,7 +93,7 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 			);
 			generatedClasses.Add($"{file.FileNamespace}.{file.LocalizedClassName}");
 			registry.Add((
-				file.AssociatedClassName,
+				file.NameWithoutExtension, // Errors.Validation.resx -> "Errors.Validation" so names stay unique
 				$"{file.FileNamespace}.{file.AssociatedClassName}",
 				$"{file.FileNamespace}.{file.LocalizedClassName}"
 			));

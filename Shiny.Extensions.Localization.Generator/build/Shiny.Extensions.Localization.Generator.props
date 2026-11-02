@@ -10,5 +10,7 @@
         <CompilerVisibleProperty Include="MSBuildProjectName" />
         <CompilerVisibleProperty Include="RootNamespace" />
         <CompilerVisibleProperty Include="GenerateLocalizersInternal" />
+        <CompilerVisibleItemMetadata Include="EmbeddedResource" MetadataName="WithCulture" />
+        <CompilerVisibleItemMetadata Include="EmbeddedResource" MetadataName="Culture" />
     </ItemGroup>
 </Project>
