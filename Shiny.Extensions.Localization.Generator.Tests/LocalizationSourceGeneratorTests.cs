@@ -243,4 +243,68 @@ public class LocalizationSourceGeneratorTests(ITestOutputHelper output)
         await Verify(results)
             .UseMethodName("CommentsInResxFileTest");
     }
+
+
+    [Fact]
+    public void GeneratesAssociatedClassStubWhenMissing()
+    {
+        var (run, diagnostics) = RunAndCompile(null);
+
+        Assert.Contains(run.Results[0].GeneratedSources, x => x.HintName == "MyTest.Strings.g.cs");
+        Assert.Empty(diagnostics);
+    }
+
+
+    [Theory]
+    [InlineData("public class Strings { }")]
+    [InlineData("public partial class Strings { }")]
+    [InlineData("internal partial class Strings { }")]
+    public void DoesNotStubAssociatedClassWhenDeclared(string declaration)
+    {
+        var (run, diagnostics) = RunAndCompile($"namespace MyTest; {declaration}");
+
+        Assert.DoesNotContain(run.Results[0].GeneratedSources, x => x.HintName == "MyTest.Strings.g.cs");
+        Assert.Empty(diagnostics);
+    }
+
+
+    static (GeneratorDriverRunResult Run, IEnumerable<Diagnostic> Errors) RunAndCompile(string? userSource)
+    {
+        var references = ((string)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")!)
+            .Split(Path.PathSeparator)
+            .Concat([
+                typeof(Microsoft.Extensions.Localization.IStringLocalizer).Assembly.Location,
+                typeof(Microsoft.Extensions.DependencyInjection.LocalizationServiceCollectionExtensions).Assembly.Location,
+                typeof(Microsoft.Extensions.DependencyInjection.IServiceCollection).Assembly.Location,
+                typeof(Microsoft.Extensions.DependencyInjection.ServiceCollectionServiceExtensions).Assembly.Location
+            ])
+            .Distinct()
+            .Select(x => MetadataReference.CreateFromFile(x));
+
+        var compilation = CSharpCompilation.Create(
+            assemblyName: "Tests",
+            syntaxTrees: userSource == null ? [] : [CSharpSyntaxTree.ParseText(userSource)],
+            references: references,
+            options: new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+        );
+        var options = new TestAnalyzerConfigOptionsProvider();
+        options.Options.Add("build_property.MSBuildProjectFullPath", "Shiny.Extensions.Localization.Generator");
+        options.Options.Add("build_property.MSBuildProjectName", "MyTest");
+
+        var resource = new ResxAdditionalText("Strings.resx");
+        resource.AddString("LocalizeKey", "This is a test");
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            [new LocalizationSourceGenerator().AsSourceGenerator()],
+            optionsProvider: options,
+            additionalTexts: ImmutableArray.Create<AdditionalText>(resource)
+        );
+        driver = driver.RunGeneratorsAndUpdateCompilation(compilation, out var output, out _);
+
+        var errors = output
+            .GetDiagnostics()
+            .Where(x => x.Severity == DiagnosticSeverity.Error);
+
+        return (driver.GetRunResult(), errors);
+    }
 }
