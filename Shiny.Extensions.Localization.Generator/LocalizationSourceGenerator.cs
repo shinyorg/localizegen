@@ -20,6 +20,24 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 		DiagnosticSeverity.Warning,
 		true
 	);
+
+	static readonly DiagnosticDescriptor NameConflict = new(
+		"SHINY0002",
+		"Resource file name conflicts with an existing type or namespace",
+		"'{0}' would generate {1} '{2}', which conflicts with {3} '{2}', so no localizer was generated for it. Rename or remove the file.",
+		"Shiny.Localization",
+		DiagnosticSeverity.Error,
+		true
+	);
+
+	static readonly DiagnosticDescriptor DottedDefaultFile = new(
+		"SHINY0003",
+		"Dotted resource file is not a culture file",
+		"'{0}': '{1}' is not a culture, so it is a default resource file and generates localizer '{2}'",
+		"Shiny.Localization",
+		DiagnosticSeverity.Info,
+		true
+	);
 #pragma warning restore RS2008
 
 	public void Initialize(IncrementalGeneratorInitializationContext context)
@@ -53,8 +71,9 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 
 	void Generate(SourceProductionContext context, (Compilation Compilation, ImmutableArray<FileOptions> Files) ctx)
 	{
-		var defaultFiles = ResxClassifier.GetDefaultFiles(ctx.Files, out var orphanedCultureFiles);
-		foreach (var orphan in orphanedCultureFiles)
+		var classification = ResxClassifier.Classify(ctx.Files);
+		var defaultFiles = classification.DefaultFiles;
+		foreach (var orphan in classification.OrphanedCultureFiles)
 		{
 			context.ReportDiagnostic(Diagnostic.Create(
 				OrphanedCultureFile,
@@ -73,9 +92,44 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 		var first = defaultFiles.FirstOrDefault();
 		var rootNamespace = first?.GlobalOptions.RootNamespace ?? first?.GlobalOptions.ProjectName!;
 		var internalAccessor = first?.GlobalOptions.UseInternalAccessor ?? false;
+
+		// every type the generator could emit - a dotted file's namespace must not land on one of these
+		var plannedTypes = new HashSet<string>(StringComparer.Ordinal);
+		foreach (var file in defaultFiles)
+		{
+			plannedTypes.Add($"{file.FileNamespace}.{file.AssociatedClassName}");
+			plannedTypes.Add($"{file.FileNamespace}.{file.LocalizedClassName}");
+		}
+		var userNamespaces = new Lazy<HashSet<string>>(() => GetNamespaces(ctx.Compilation.Assembly.GlobalNamespace));
 		
 		foreach (var file in defaultFiles)
 		{
+			if (file.NameWithoutExtension.IndexOf('.') >= 0)
+			{
+				context.ReportDiagnostic(Diagnostic.Create(
+					DottedDefaultFile,
+					Location.Create(file.FilePath, default, default),
+					Path.GetFileName(file.FilePath),
+					file.NameWithoutExtension.Substring(file.NameWithoutExtension.LastIndexOf('.') + 1),
+					$"{file.FileNamespace}.{file.LocalizedClassName}"
+				));
+			}
+
+			// emitting code that collides fails with CS0101 somewhere unrelated (often a .Designer.cs) - say why instead
+			var conflict = FindNameConflict(file, ctx.Compilation, plannedTypes, userNamespaces);
+			if (conflict != null)
+			{
+				context.ReportDiagnostic(Diagnostic.Create(
+					NameConflict,
+					Location.Create(file.FilePath, default, default),
+					Path.GetFileName(file.FilePath),
+					conflict.Value.Generates,
+					conflict.Value.Name,
+					conflict.Value.ConflictsWith
+				));
+				continue;
+			}
+
 			// match the visibility of the user's associated class when it exists in this assembly,
 			// otherwise fall back to GenerateLocalizersInternal (and stub the class below)
 			var associatedMetadataName = $"{file.FileNamespace}.{file.AssociatedClassName}";
@@ -121,9 +175,61 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 		var generatedRegistry = GenerateLocalizerRegistry(
 			rootNamespace,
 			registry,
+			classification.Cultures,
 			internalAccessor
 		);
 		context.AddSource("GeneratedLocalizers.g.cs", generatedRegistry);
+	}
+
+
+	static (string Generates, string Name, string ConflictsWith)? FindNameConflict(
+		FileOptions file,
+		Compilation compilation,
+		HashSet<string> plannedTypes,
+		Lazy<HashSet<string>> userNamespaces
+	)
+	{
+		// the file's namespace (or any parent of it) is already a type - Strings.orig.resx -> namespace PoolMath.Strings vs class PoolMath.Strings
+		var segments = file.FileNamespace.Split('.');
+		for (var i = 1; i <= segments.Length; i++)
+		{
+			var ns = String.Join(".", segments, 0, i);
+			if (String.IsNullOrEmpty(ns))
+				continue;
+
+			if (compilation.Assembly.GetTypeByMetadataName(ns) != null)
+				return ("namespace", ns, "type");
+
+			if (plannedTypes.Contains(ns))
+				return ("namespace", ns, "the generated type");
+		}
+
+		// the type the file generates is already a namespace in user code
+		foreach (var type in new[] { file.AssociatedClassName, file.LocalizedClassName })
+		{
+			var full = String.IsNullOrEmpty(file.FileNamespace) ? type : $"{file.FileNamespace}.{type}";
+			if (userNamespaces.Value.Contains(full))
+				return ("type", full, "namespace");
+		}
+
+		return null;
+	}
+
+
+	static HashSet<string> GetNamespaces(INamespaceSymbol root)
+	{
+		var set = new HashSet<string>(StringComparer.Ordinal);
+		var stack = new Stack<INamespaceSymbol>();
+		stack.Push(root);
+		while (stack.Count > 0)
+		{
+			foreach (var ns in stack.Pop().GetNamespaceMembers())
+			{
+				set.Add(ns.ToDisplayString());
+				stack.Push(ns);
+			}
+		}
+		return set;
 	}
 
 
@@ -292,6 +398,7 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 	static string GenerateLocalizerRegistry(
 		string rootNamespace,
 		IEnumerable<(string Name, string ResourceSource, string LocalizedType)> entries,
+		IEnumerable<string> cultures,
 		bool useInternalAccessor
 	)
 	{
@@ -325,6 +432,19 @@ public class LocalizationSourceGenerator : IIncrementalGenerator
 
 		foreach (var entry in entries)
 			sb.AppendLine($"\t\t(\"{entry.Name}\", typeof(global::{entry.ResourceSource}), typeof(global::{entry.LocalizedType})),");
+
+		sb
+			.AppendLine("\t};")
+			.AppendLine()
+			.AppendLine("\t/// <summary>")
+			.AppendLine("\t/// Cultures with at least one translated .resx in this assembly (Strings.fr-CA.resx -> \"fr-CA\"), sorted.")
+			.AppendLine("\t/// The neutral/default resources are not included. Use for language pickers without probing satellite assemblies.")
+			.AppendLine("\t/// </summary>")
+			.AppendLine("\tpublic static readonly string[] Cultures = new string[]")
+			.AppendLine("\t{");
+
+		foreach (var culture in cultures)
+			sb.AppendLine($"\t\t\"{culture.Replace("\\", "\\\\").Replace("\"", "\\\"")}\",");
 
 		sb
 			.AppendLine("\t};")

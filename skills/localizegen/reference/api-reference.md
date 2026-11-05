@@ -89,12 +89,20 @@ public static class GeneratedLocalizers
         ("MyViewModel", typeof(MyApp.MyViewModel), typeof(MyApp.MyViewModelLocalized)),
         ("Errors.Validation", typeof(MyApp.Errors.Validation), typeof(MyApp.Errors.ValidationLocalized)),
     };
+
+    // cultures with at least one translated .resx beside a default file (MyViewModel.fr-ca.resx -> "fr-CA")
+    public static readonly string[] Cultures = new string[]
+    {
+        "de",
+        "fr-CA",
+    };
 }
 ```
 
 - `Name` is the `.resx` file name without extension; `ResourceSource` is the `T` for `IStringLocalizer<T>`; `LocalizedType` is the generated wrapper
 - Same namespace and accessor rules as `ServiceCollectionExtensions_Generated`; empty array when there are no `.resx` files
 - Build a name lookup with `GeneratedLocalizers.All.ToDictionary(x => x.Name, x => factory.Create(x.ResourceSource))` using `IStringLocalizerFactory`
+- `Cultures` is the distinct, sorted union of translation cultures in the assembly, normalized to `CultureInfo.Name` casing. The neutral/default language is not included, and neither are orphaned culture files (`SHINY0001`). Use it for in-app language pickers instead of probing satellite folders, which fails under NativeAOT, single-file and Blazor WASM: `GeneratedLocalizers.Cultures.Select(CultureInfo.GetCultureInfo)`
 
 ### Associated Class
 
@@ -172,16 +180,21 @@ Only default `.resx` files generate a class; culture files (`MyClass.fr-ca.resx`
 
 Extra dots in a default file name become namespace segments (`Errors.Validation.resx` → `MyApp.Errors.ValidationLocalized`), matching the manifest resource name MSBuild embeds.
 
+> **Changed in 2.1:** 2.0.x skipped every `.resx` with a dot in its name. Since 2.1, a dotted file whose last segment is not a culture (e.g. a leftover `Strings.orig.resx` or `Strings.bak.resx`) is a default file and generates a localizer. Each one reports info diagnostic `SHINY0003`. If its namespace collides with a type (`Strings.orig.resx` → namespace `MyApp.Strings` next to class `MyApp.Strings`), error `SHINY0002` is reported and that file is skipped. Delete or rename stale backup files.
+
 ### Diagnostics
 
 | Id | Severity | When |
 |----|----------|------|
 | `SHINY0000` | Warning | No default `.resx` files were found |
 | `SHINY0001` | Warning | A culture file has no default file (e.g. `Orphan.de.resx` without `Orphan.resx`) |
+| `SHINY0002` | Error | A file would generate a namespace that is already a type, or a type that is already a namespace (e.g. `Strings.orig.resx` → namespace `MyApp.Strings` while class `MyApp.Strings` exists). The file is skipped; rename or remove it |
+| `SHINY0003` | Info | A dotted file name's last segment is not a culture, so the file generates a localizer (e.g. `Strings.orig.resx` → `MyApp.Strings.origLocalized`) |
 
 ## Troubleshooting
 
 ### Compile error in generated code
+- `CS0101 ... already contains a definition for 'X'` should now surface as `SHINY0002` instead; it usually means a stale dotted copy such as `X.orig.resx` sits next to `X.resx`
 - If you declared the associated class, ensure it is in the same namespace as the generated `*Localized` class
 - A `.Designer.cs` from Visual Studio's `ResXFileCodeGenerator` is picked up as the associated class; set the `.resx` Access Modifier to "No code generation" to remove it
 

@@ -19,4 +19,12 @@ public static class GeneratedLocalizers
 	{
 		("Formatting", typeof(global::FormattingTest.Formatting), typeof(global::FormattingTest.FormattingLocalized)),
 	};
+
+	/// <summary>
+	/// Cultures with at least one translated .resx in this assembly (Strings.fr-CA.resx -> "fr-CA"), sorted.
+	/// The neutral/default resources are not included. Use for language pickers without probing satellite assemblies.
+	/// </summary>
+	public static readonly string[] Cultures = new string[]
+	{
+	};
 }

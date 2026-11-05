@@ -70,6 +70,8 @@ builder.Services.AddStronglyTypedLocalizations();
 - Dots in a default file name become namespace segments: `Errors.Validation.resx` → `{Namespace}.Errors.ValidationLocalized`, paired with `{Namespace}.Errors.Validation`
 - A culture file with no default file (e.g., `Orphan.de.resx` without `Orphan.resx`) raises warning `SHINY0001`
 - `GeneratedLocalizers.All` lists every generated localizer as `(Name, ResourceSource, LocalizedType)` without reflection (trim/NativeAOT safe)
+- `GeneratedLocalizers.Cultures` lists the cultures the assembly ships translations for (e.g. `["de", "fr-CA"]`, neutral language excluded) for reflection-free language pickers
+- A dotted name whose last segment isn't a culture (`Strings.orig.resx`) generates a localizer (info `SHINY0003`); if its namespace collides with an existing type, error `SHINY0002` is raised and the file is skipped
 - The generator produces a `{ClassName}Localized` class (e.g., `MyViewModelLocalized`) for each `.resx` file
 
 ## How It Works

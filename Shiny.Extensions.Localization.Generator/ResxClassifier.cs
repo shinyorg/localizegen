@@ -18,6 +18,28 @@ public class OrphanedCultureFile
 }
 
 
+public class ResxClassification
+{
+    public ResxClassification(List<FileOptions> defaultFiles, List<OrphanedCultureFile> orphanedCultureFiles, List<string> cultures)
+    {
+        this.DefaultFiles = defaultFiles;
+        this.OrphanedCultureFiles = orphanedCultureFiles;
+        this.Cultures = cultures;
+    }
+
+    /// <summary>
+    /// Default resource files - each one gets a localizer
+    /// </summary>
+    public List<FileOptions> DefaultFiles { get; }
+    public List<OrphanedCultureFile> OrphanedCultureFiles { get; }
+
+    /// <summary>
+    /// Distinct, sorted culture names that have at least one translation with a default file (neutral resources excluded)
+    /// </summary>
+    public List<string> Cultures { get; }
+}
+
+
 /// <summary>
 /// Splits .resx files into default resource files (which get a localizer) and culture files
 /// (Strings.de.resx, Errors.Validation.fr-CA.resx) which only feed satellite assemblies
@@ -31,6 +53,18 @@ public static class ResxClassifier
     public static List<FileOptions> GetDefaultFiles(
         IEnumerable<FileOptions> files,
         out List<OrphanedCultureFile> orphanedCultureFiles,
+        IReadOnlyCollection<string>? knownCultureNames = null
+    )
+    {
+        var result = Classify(files, knownCultureNames);
+        orphanedCultureFiles = result.OrphanedCultureFiles;
+        return result.DefaultFiles;
+    }
+
+
+    /// <param name="knownCultureNames">culture names to recognise when MSBuild doesn't supply WithCulture - defaults to this machine's cultures (tests pass their own)</param>
+    public static ResxClassification Classify(
+        IEnumerable<FileOptions> files,
         IReadOnlyCollection<string>? knownCultureNames = null
     )
     {
@@ -52,12 +86,37 @@ public static class ResxClassifier
         }
 
         var defaultPaths = new HashSet<string>(defaults.Select(x => x.FilePath), StringComparer.OrdinalIgnoreCase);
-        orphanedCultureFiles = cultures
+        var orphans = cultures
             .Where(x => !defaultPaths.Contains(x.DefaultPath))
             .Select(x => new OrphanedCultureFile(x.File, x.Culture, Path.GetFileName(x.DefaultPath)))
             .ToList();
 
-        return defaults;
+        // only translations that sit beside a default file end up in a satellite assembly a localizer can reach
+        var shipped = cultures
+            .Where(x => defaultPaths.Contains(x.DefaultPath))
+            .Select(x => NormalizeCultureName(x.Culture))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToList();
+
+        return new ResxClassification(defaults, orphans, shipped);
+    }
+
+
+    // Strings.fr-ca.resx -> "fr-CA" so the list matches CultureInfo.Name; unknown names (custom cultures) stay as written
+    static string NormalizeCultureName(string culture)
+    {
+        try
+        {
+            var name = CultureInfo.GetCultureInfo(culture).Name;
+            if (!String.IsNullOrEmpty(name))
+                return name;
+        }
+        catch
+        {
+            // invariant globalization or a culture this machine doesn't know
+        }
+        return culture;
     }
 
 

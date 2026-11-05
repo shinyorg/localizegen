@@ -16,4 +16,12 @@ public static class GeneratedLocalizers
 	public static readonly (string Name, global::System.Type ResourceSource, global::System.Type LocalizedType)[] All = new (string Name, global::System.Type ResourceSource, global::System.Type LocalizedType)[]
 	{
 	};
+
+	/// <summary>
+	/// Cultures with at least one translated .resx in this assembly (Strings.fr-CA.resx -> "fr-CA"), sorted.
+	/// The neutral/default resources are not included. Use for language pickers without probing satellite assemblies.
+	/// </summary>
+	public static readonly string[] Cultures = new string[]
+	{
+	};
 }
